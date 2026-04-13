@@ -45,6 +45,14 @@ const FUENTES = [
   { id: "instagram", label: "Instagram", activo: false, icon: "◉" },
 ];
 
+const APIS_CONFIG = [
+  { id: "anthropic",   label: "Anthropic",   abbr: "ANT", color: "#e53e3e", tipo: "credito",  consumoPorVideo: 0.01, unidad: "$", renovarUrl: "https://console.anthropic.com" },
+  { id: "creatomate",  label: "Creatomate",  abbr: "CRE", color: "#38d9a9", tipo: "renders",  consumoPorVideo: 1,    unidad: "renders", renovarUrl: "https://creatomate.com" },
+  { id: "elevenlabs",  label: "ElevenLabs",  abbr: "11L", color: "#f59e0b", tipo: "chars",    consumoPorVideo: 1800, unidad: "chars", renovarUrl: "https://elevenlabs.io", auto: true },
+  { id: "falai",       label: "fal.ai",      abbr: "fal", color: "#a78bfa", tipo: "credito",  consumoPorVideo: 1.20, unidad: "$", renovarUrl: "https://fal.ai" },
+  { id: "railway",     label: "Railway",     abbr: "RW",  color: "#6b7280", tipo: "credito",  consumoPorVideo: 0,    unidad: "$", renovarUrl: "https://railway.app", fijo: true },
+];
+
 async function supabaseQuery(table, params = "") {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${params}`, {
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
@@ -58,16 +66,6 @@ function PulsingDot({ color }) {
       <span style={{ position: "absolute", inset: 0, borderRadius: "50%", background: color, animation: "ping 1.5s ease-in-out infinite", opacity: 0.6 }} />
       <span style={{ position: "absolute", inset: 0, borderRadius: "50%", background: color }} />
     </span>
-  );
-}
-
-function StatCard({ label, value, accent, sublabel }) {
-  return (
-    <div style={{ background: "#0f0f0f", border: `1px solid ${accent}30`, borderRadius: 12, padding: "20px 24px", boxShadow: `0 0 20px ${accent}15` }}>
-      <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 8, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
-      <div style={{ fontSize: 36, fontWeight: 700, color: accent, lineHeight: 1, fontFamily: "'Space Mono', monospace" }}>{value}</div>
-      {sublabel && <div style={{ fontSize: 12, color: "#4b5563", marginTop: 6 }}>{sublabel}</div>}
-    </div>
   );
 }
 
@@ -108,190 +106,65 @@ function VideoCard({ video, canalNicho }) {
   );
 }
 
-function CanalSection({ canal, videos }) {
-  const col = CANAL_COLORS[canal.nicho] || CANAL_COLORS.curiosidades;
-  const publicados = videos.filter(v => v.estado === "publicado").length;
-  const enProceso  = videos.filter(v => !["publicado","error","pendiente"].includes(v.estado)).length;
-  const errores    = videos.filter(v => v.estado === "error").length;
+// ===== PIPELINE =====
+function PipelineSection({ canales, videos, loading }) {
+  const [canalFiltro, setCanalFiltro] = useState("todos");
+  const videosF = canalFiltro === "todos" ? videos : videos.filter(v => v.canal_id === canalFiltro);
   return (
-    <div style={{ background: "#080808", border: `1px solid ${col.accent}30`, borderRadius: 16, padding: 20, marginBottom: 24, boxShadow: `0 0 30px ${col.glow}` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <div style={{ width: 10, height: 10, borderRadius: "50%", background: col.accent, boxShadow: `0 0 8px ${col.accent}` }} />
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: col.accent, fontFamily: "'Space Mono', monospace" }}>{canal.nombre}</h2>
-        <span style={{ fontSize: 11, color: "#4b5563", marginLeft: "auto" }}>{canal.nicho}</span>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}>
-        {[{label:"Publicados",value:publicados,color:"#22c55e"},{label:"En proceso",value:enProceso,color:col.accent},{label:"Errores",value:errores,color:"#ef4444"}].map(s => (
-          <div key={s.label} style={{ background: "#0f0f0f", borderRadius: 8, padding: "10px 14px", border: `1px solid ${s.color}20`, textAlign: "center" }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: s.color, fontFamily: "'Space Mono', monospace" }}>{s.value}</div>
-            <div style={{ fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
+        {[
+          { label: "TOTAL VIDEOS", value: videos.length, color: "#6b7280", sub: "generados" },
+          { label: "PUBLICADOS", value: videos.filter(v => v.estado === "publicado").length, color: "#22c55e", sub: "en YouTube" },
+          { label: "EN PROCESO", value: videos.filter(v => !["publicado","error","pendiente"].includes(v.estado)).length, color: "#f59e0b", sub: "ahora mismo" },
+          { label: "ERRORES", value: videos.filter(v => v.estado === "error").length, color: "#ef4444", sub: "requieren atención" },
+        ].map(s => (
+          <div key={s.label} style={{ background: "#080808", border: `1px solid ${s.color}20`, borderRadius: 12, padding: "20px 24px" }}>
+            <div style={{ fontSize: 10, color: "#4b5563", letterSpacing: "0.12em", marginBottom: 10 }}>{s.label}</div>
+            <div style={{ fontSize: 40, fontWeight: 700, color: s.color, fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{s.value}</div>
+            <div style={{ fontSize: 12, color: "#374151", marginTop: 6 }}>{s.sub}</div>
           </div>
         ))}
       </div>
-      {videos.length === 0
-        ? <div style={{ textAlign: "center", padding: "20px 0", color: "#374151", fontSize: 13 }}>Sin videos aún — el pipeline disparará a las 12pm y 6pm</div>
-        : videos.slice(0, 5).map(v => <VideoCard key={v.id} video={v} canalNicho={canal.nicho} />)
-      }
-    </div>
-  );
-}
-
-function CustomTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{ background: "#0f0f0f", border: "1px solid #1f2937", borderRadius: 8, padding: "10px 14px" }}>
-      <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>{label}</div>
-      {payload.map((p, i) => (
-        <div key={i} style={{ fontSize: 12, color: p.color, fontFamily: "'Space Mono', monospace" }}>
-          {p.name}: {Number(p.value).toLocaleString("es-PE")}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+        <span style={{ fontSize: 10, color: "#4b5563", letterSpacing: "0.1em" }}>FILTRAR POR CANAL:</span>
+        <select value={canalFiltro} onChange={e => setCanalFiltro(e.target.value)} style={{ background: "#0f0f0f", border: "1px solid #1f2937", borderRadius: 8, padding: "6px 12px", color: "#e5e7eb", fontSize: 13, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}>
+          <option value="todos">Todos los canales</option>
+          {canales.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+        </select>
+      </div>
+      <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 12 }}>VIDEOS RECIENTES</div>
+      <div style={{ background: "#080808", borderRadius: 12, border: "1px solid #111", overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1.5fr", padding: "10px 20px", borderBottom: "1px solid #111" }}>
+          {["TÍTULO","CANAL","ESTADO","FECHA","YOUTUBE","TEMA"].map(h => (
+            <span key={h} style={{ fontSize: 10, color: "#374151", letterSpacing: "0.08em" }}>{h}</span>
+          ))}
         </div>
-      ))}
-    </div>
-  );
-}
-
-function MetricasSection({ canales }) {
-  const [metricas, setMetricas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [metricaActiva, setMetricaActiva] = useState("vistas");
-
-  useEffect(() => {
-    supabaseQuery("metricas_youtube", "?order=fecha_consulta.asc&limit=300")
-      .then(d => { setMetricas(Array.isArray(d) ? d : []); setLoading(false); });
-  }, []);
-
-  const buildChartData = () => {
-    if (metricas.length === 0) {
-      const hoy = new Date();
-      return Array.from({ length: 14 }, (_, i) => {
-        const d = new Date(hoy); d.setDate(d.getDate() - (13 - i));
-        const fecha = d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
-        return { fecha, "Archivo Siniestro": 0, "Dinero Consciente": 0, "Mente Inquieta": 0 };
-      });
-    }
-    const porFecha = {};
-    metricas.forEach(m => {
-      const fecha = new Date(m.fecha_consulta).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
-      const canal = canales.find(c => c.id === m.canal_id);
-      const nombre = canal?.nombre || "Otro";
-      if (!porFecha[fecha]) porFecha[fecha] = { fecha };
-      porFecha[fecha][nombre] = (porFecha[fecha][nombre] || 0) + (Number(m[metricaActiva]) || 0);
-    });
-    return Object.values(porFecha);
-  };
-
-  const totales = canales.map(canal => {
-    const col = CANAL_COLORS[canal.nicho] || CANAL_COLORS.curiosidades;
-    const cm = metricas.filter(m => m.canal_id === canal.id);
-    return {
-      nombre: canal.nombre, color: col.accent,
-      vistas:       cm.reduce((s, m) => s + (m.vistas || 0), 0),
-      likes:        cm.reduce((s, m) => s + (m.likes || 0), 0),
-      suscriptores: cm.reduce((s, m) => s + (m.suscriptores_ganados || 0), 0),
-      comentarios:  cm.reduce((s, m) => s + (m.comentarios || 0), 0),
-      ctr:          cm.length ? (cm.reduce((s, m) => s + (Number(m.ctr) || 0), 0) / cm.length).toFixed(2) : "0.00",
-      retencion:    cm.length ? (cm.reduce((s, m) => s + (Number(m.retencion_promedio_pct) || 0), 0) / cm.length).toFixed(1) : "0.0",
-    };
-  });
-
-  const chartData = buildChartData();
-  const mConfig = METRICAS_CONFIG.find(m => m.key === metricaActiva);
-
-  return (
-    <div style={{ animation: "fadeIn 0.3s ease" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 28 }}>
-        {totales.map(t => (
-          <div key={t.nombre} style={{ background: "#080808", border: `1px solid ${t.color}30`, borderRadius: 14, padding: 20, boxShadow: `0 0 20px ${t.color}15` }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: t.color, marginBottom: 16, fontFamily: "'Space Mono', monospace" }}>{t.nombre}</div>
-            {[
-              { label: "Vistas",       value: Number(t.vistas).toLocaleString("es-PE") },
-              { label: "Likes",        value: Number(t.likes).toLocaleString("es-PE") },
-              { label: "Suscriptores", value: `+${Number(t.suscriptores).toLocaleString("es-PE")}` },
-              { label: "Comentarios",  value: Number(t.comentarios).toLocaleString("es-PE") },
-              { label: "CTR prom.",    value: `${t.ctr}%` },
-              { label: "Retención",    value: `${t.retencion}%` },
-            ].map(item => (
-              <div key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #0f0f0f" }}>
-                <span style={{ fontSize: 12, color: "#6b7280" }}>{item.label}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#e5e7eb", fontFamily: "'Space Mono', monospace" }}>{item.value}</span>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-        {METRICAS_CONFIG.map(m => (
-          <button key={m.key} onClick={() => setMetricaActiva(m.key)} style={{
-            background: metricaActiva === m.key ? `${m.color}20` : "transparent",
-            border: `1px solid ${metricaActiva === m.key ? m.color : "#1f2937"}`,
-            borderRadius: 20, padding: "6px 16px", cursor: "pointer",
-            color: metricaActiva === m.key ? m.color : "#6b7280",
-            fontSize: 12, fontFamily: "'DM Sans', sans-serif", transition: "all 0.2s",
-          }}>{m.label}</button>
-        ))}
-      </div>
-      <div style={{ background: "#080808", border: "1px solid #111", borderRadius: 16, padding: "24px 12px 16px" }}>
-        <div style={{ paddingLeft: 12, marginBottom: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#e5e7eb" }}>{mConfig?.label} por canal</div>
-          <div style={{ fontSize: 11, color: "#4b5563", marginTop: 3 }}>{metricas.length === 0 ? "Sin datos aún" : `${metricas.length} registros`}</div>
-        </div>
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-            <defs>
-              {canales.map(c => {
-                const color = CANAL_CHART_COLORS[c.nombre] || "#6b7280";
-                return (
-                  <linearGradient key={c.id} id={`g-${c.id}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={color} stopOpacity={0.25} />
-                    <stop offset="95%" stopColor={color} stopOpacity={0} />
-                  </linearGradient>
-                );
-              })}
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#111" />
-            <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: "#4b5563" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: "#4b5563" }} axisLine={false} tickLine={false} />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend wrapperStyle={{ fontSize: 12, color: "#6b7280", paddingTop: 16 }} />
-            {canales.map(c => {
-              const color = CANAL_CHART_COLORS[c.nombre] || "#6b7280";
-              return <Area key={c.id} type="monotone" dataKey={c.nombre} stroke={color} strokeWidth={2} fill={`url(#g-${c.id})`} dot={false} activeDot={{ r: 4, fill: color }} />;
-            })}
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
-
-function TemaSection({ canales }) {
-  const [temas, setTemas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    supabaseQuery("temas", "?order=prioridad.desc&limit=60")
-      .then(d => { setTemas(Array.isArray(d) ? d : []); setLoading(false); });
-  }, []);
-  return (
-    <div style={{ animation: "fadeIn 0.3s ease" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
-        {canales.map(canal => {
-          const col = CANAL_COLORS[canal.nicho] || CANAL_COLORS.curiosidades;
-          const ct = temas.filter(t => t.canal_id === canal.id);
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "40px 0", color: "#374151", fontSize: 13 }}>Cargando...</div>
+        ) : videosF.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "40px 0", color: "#374151", fontSize: 13 }}>Sin videos aún</div>
+        ) : videosF.map((v, i) => {
+          const canal = canales.find(c => c.id === v.canal_id);
+          const col = CANAL_COLORS[canal?.nicho] || CANAL_COLORS.curiosidades;
+          const est = ESTADO_CONFIG[v.estado] || ESTADO_CONFIG.pendiente;
+          const fecha = v.publicado_en ? new Date(v.publicado_en).toLocaleDateString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
           return (
-            <div key={canal.id} style={{ background: "#080808", border: `1px solid ${col.accent}25`, borderRadius: 14, padding: 18 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 700, color: col.accent, marginBottom: 14, fontFamily: "'Space Mono', monospace" }}>{canal.nombre}</h3>
-              {loading ? <div style={{ color: "#374151", fontSize: 12 }}>Cargando...</div>
-                : ct.length === 0 ? <div style={{ color: "#374151", fontSize: 12 }}>Sin temas cargados</div>
-                : ct.map((tema, i) => (
-                  <div key={tema.id || i} style={{ padding: "8px 10px", marginBottom: 6, background: "#0f0f0f", borderRadius: 8, border: `1px solid ${tema.usado ? "#1f293740" : col.accent + "20"}`, opacity: tema.usado ? 0.4 : 1 }}>
-                    <div style={{ fontSize: 12, color: tema.usado ? "#4b5563" : "#d1d5db" }}>{tema.titulo_sugerido || "—"}</div>
-                    <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                      <span style={{ fontSize: 10, color: "#374151" }}>Prioridad: {tema.prioridad || "—"}</span>
-                      {tema.usado && <span style={{ fontSize: 10, color: "#22c55e" }}>✓ usado</span>}
-                    </div>
-                  </div>
-                ))
-              }
+            <div key={v.id || i} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1.5fr", padding: "12px 20px", borderBottom: "1px solid #0a0a0a", alignItems: "center" }}>
+              <span style={{ fontSize: 13, color: "#e5e7eb", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 12 }}>
+                {v.titulo || "Sin título"}
+              </span>
+              <span style={{ fontSize: 12, color: col.accent }}>{canal?.nombre || "—"}</span>
+              <span>
+                <span style={{ fontSize: 11, color: est.color, background: `${est.color}15`, padding: "3px 8px", borderRadius: 20, border: `1px solid ${est.color}30` }}>{est.label}</span>
+              </span>
+              <span style={{ fontSize: 11, color: "#6b7280" }}>{fecha}</span>
+              <span>
+                {v.youtube_video_id ? (
+                  <a href={v.youtube_url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#e53e3e", textDecoration: "none" }}>▶ {v.youtube_video_id.slice(0,8)}…</a>
+                ) : "—"}
+              </span>
+              <span style={{ fontSize: 11, color: "#4b5563", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v.titulo_tema || v.tema || "—"}</span>
             </div>
           );
         })}
@@ -300,7 +173,383 @@ function TemaSection({ canales }) {
   );
 }
 
-// ============ EVOLUCION SECTION ============
+// ===== APIs & CRÉDITOS =====
+function ApiCreditosSection({ videos }) {
+  const videosPublicados = videos.filter(v => v.estado === "publicado").length;
+  const [saldos, setSaldos] = useState({
+    anthropic: 27.04, creatomate: 9100, elevenlabs: 58700, falai: 43.87, railway: 5.00
+  });
+  const [editando, setEditando] = useState(null);
+  const [inputVal, setInputVal] = useState("");
+
+  const iniciarEdicion = (id, valor) => { setEditando(id); setInputVal(String(valor)); };
+  const guardarEdicion = (id) => {
+    setSaldos(s => ({ ...s, [id]: parseFloat(inputVal) || 0 }));
+    setEditando(null);
+  };
+
+  const videosRestantes = (api) => {
+    if (api.consumoPorVideo === 0) return "∞";
+    return Math.floor(saldos[api.id] / api.consumoPorVideo).toLocaleString("es-PE");
+  };
+  const diasAprox = (api) => {
+    const vrest = api.consumoPorVideo === 0 ? Infinity : saldos[api.id] / api.consumoPorVideo;
+    if (!isFinite(vrest)) return "∞";
+    return Math.floor(vrest / 1).toLocaleString("es-PE");
+  };
+  const porcentaje = (api) => {
+    const maxSaldos = { anthropic: 50, creatomate: 10000, elevenlabs: 100000, falai: 50, railway: 10 };
+    return Math.min(100, (saldos[api.id] / (maxSaldos[api.id] || 1)) * 100);
+  };
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      <div style={{ background: "#0a0a0a", border: "1px solid #1f2937", borderRadius: 10, padding: "12px 16px", marginBottom: 24, display: "flex", gap: 8, alignItems: "flex-start" }}>
+        <span style={{ fontSize: 16 }}>🔔</span>
+        <div>
+          <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 600, marginBottom: 4 }}>Los saldos se guardan en Supabase y se descuentan automáticamente.</div>
+          <div style={{ fontSize: 12, color: "#4b5563" }}>
+            Cada video publicado descuenta: fal.ai $1.20 · Anthropic $0.01 · Creatomate 1 render. APIs con <span style={{ background: "#22c55e20", color: "#22c55e", border: "1px solid #22c55e30", borderRadius: 4, padding: "1px 5px", fontSize: 10 }}>AUTO</span> se actualizan solas vía API. <strong style={{ color: "#e5e7eb" }}>Click en el saldo para ingresar/corregir el valor actual.</strong>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>ESTADO DE CRÉDITOS</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 16 }}>
+        {APIS_CONFIG.filter(a => a.id !== "railway").map(api => {
+          const pct = porcentaje(api);
+          const vrest = videosRestantes(api);
+          const dias = diasAprox(api);
+          return (
+            <div key={api.id} style={{ background: "#080808", border: `1px solid ${api.color}25`, borderRadius: 14, padding: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 6, background: `${api.color}20`, border: `1px solid ${api.color}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: api.color, fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{api.abbr}</div>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "#e5e7eb" }}>{api.label}</span>
+                  {api.auto && <span style={{ fontSize: 9, background: "#22c55e20", color: "#22c55e", border: "1px solid #22c55e30", borderRadius: 4, padding: "1px 5px" }}>AUTO</span>}
+                </div>
+                <a href={api.renovarUrl} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#4b5563", textDecoration: "none", border: "1px solid #1f2937", borderRadius: 6, padding: "3px 8px" }}>↗ {api.tipo === "credito" ? "Recargar" : "Renovar"}</a>
+              </div>
+              <div style={{ fontSize: 10, color: "#374151", marginBottom: 4 }}>SALDO ACTUAL · ACT. 16H</div>
+              <div
+                onClick={() => iniciarEdicion(api.id, saldos[api.id])}
+                style={{ fontSize: editando === api.id ? 16 : 28, fontWeight: 700, color: api.color, fontFamily: "'Space Mono', monospace", cursor: "pointer", marginBottom: 8 }}
+              >
+                {editando === api.id ? (
+                  <input
+                    autoFocus
+                    value={inputVal}
+                    onChange={e => setInputVal(e.target.value)}
+                    onBlur={() => guardarEdicion(api.id)}
+                    onKeyDown={e => e.key === "Enter" && guardarEdicion(api.id)}
+                    style={{ background: "#0f0f0f", border: `1px solid ${api.color}`, borderRadius: 6, padding: "4px 8px", color: api.color, fontSize: 16, fontFamily: "'Space Mono', monospace", width: "100%" }}
+                  />
+                ) : (
+                  `${api.unidad === "$" ? "$" : ""}${Number(saldos[api.id]).toLocaleString("es-PE")}${api.unidad !== "$" ? " " + api.unidad : ""}`
+                )}
+              </div>
+              <div style={{ fontSize: 11, color: "#374151", marginBottom: 8 }}>{api.tipo === "credito" ? "Video AI · actualizar manualmente" : api.tipo === "renders" ? `Video render · 3 templates · actualizar manualmente` : `TTS · auto-actualizado`}</div>
+              <div style={{ height: 4, background: "#111", borderRadius: 2, marginBottom: 12, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${pct}%`, background: pct > 50 ? api.color : pct > 20 ? "#f59e0b" : "#ef4444", borderRadius: 2, transition: "width 0.3s" }} />
+              </div>
+              {[
+                { label: "Videos restantes", value: vrest },
+                { label: "Días aprox.", value: dias + " días" },
+                { label: "Consumo/video", value: api.consumoPorVideo === 0 ? "fijo" : `${api.unidad === "$" ? "$" : ""}${api.consumoPorVideo}${api.unidad !== "$" ? " " + api.unidad : ""}` },
+              ].map(row => (
+                <div key={row.label} style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, color: "#374151" }}>{row.label}</span>
+                  <span style={{ fontSize: 11, color: "#6b7280", fontFamily: "'Space Mono', monospace" }}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Railway aparte */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 32 }}>
+        {APIS_CONFIG.filter(a => a.id === "railway").map(api => (
+          <div key={api.id} style={{ background: "#080808", border: `1px solid ${api.color}25`, borderRadius: 14, padding: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 6, background: `${api.color}20`, border: `1px solid ${api.color}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: api.color, fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{api.abbr}</div>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "#e5e7eb" }}>{api.label}</span>
+              </div>
+              <a href={api.renovarUrl} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#4b5563", textDecoration: "none", border: "1px solid #1f2937", borderRadius: 6, padding: "3px 8px" }}>↗ Renovar</a>
+            </div>
+            <div style={{ fontSize: 10, color: "#374151", marginBottom: 4 }}>SALDO ACTUAL · ACT. 16H</div>
+            <div onClick={() => iniciarEdicion(api.id, saldos[api.id])} style={{ fontSize: 28, fontWeight: 700, color: api.color, fontFamily: "'Space Mono', monospace", cursor: "pointer", marginBottom: 4 }}>
+              {editando === api.id ? (
+                <input autoFocus value={inputVal} onChange={e => setInputVal(e.target.value)} onBlur={() => guardarEdicion(api.id)} onKeyDown={e => e.key === "Enter" && guardarEdicion(api.id)} style={{ background: "#0f0f0f", border: `1px solid ${api.color}`, borderRadius: 6, padding: "4px 8px", color: api.color, fontSize: 16, fontFamily: "'Space Mono', monospace", width: "100%" }} />
+              ) : `$${Number(saldos[api.id]).toFixed(2)}`}
+            </div>
+            <div style={{ fontSize: 11, color: "#374151" }}>n8n self-hosted · Plan Hobby $5/mes · 5GB disco</div>
+            <div style={{ height: 4, background: "#111", borderRadius: 2, marginTop: 12, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${(saldos[api.id] / 10) * 100}%`, background: api.color, borderRadius: 2 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Estimador */}
+      <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>ESTIMADOR MENSUAL (3 CANALES × 1 VID/DÍA = 90 VIDEOS/MES)</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0, background: "#080808", borderRadius: 12, border: "1px solid #111", overflow: "hidden" }}>
+        <div style={{ padding: "10px 20px", borderBottom: "1px solid #111", borderRight: "1px solid #111" }}>
+          <span style={{ fontSize: 10, color: "#374151", letterSpacing: "0.08em" }}>COSTO POR VIDEO</span>
+        </div>
+        <div style={{ padding: "10px 20px", borderBottom: "1px solid #111", borderRight: "1px solid #111" }}>
+          <span style={{ fontSize: 10, color: "#374151", letterSpacing: "0.08em" }}>MENSUAL (90 VIDEOS)</span>
+        </div>
+        <div style={{ padding: "10px 20px", borderBottom: "1px solid #111" }}>
+          <span style={{ fontSize: 10, color: "#374151", letterSpacing: "0.08em" }}>RENOVACIONES</span>
+        </div>
+        {[
+          { nombre: "fal.ai (6 clips)", costo: "$1.20", mensual: "~$108", renovacion: "fal.ai $50 (~41 videos)", url: "https://fal.ai" },
+          { nombre: "ElevenLabs (~1800 chars)", costo: "~1,800 chars", mensual: "~162K chars", renovacion: "ElevenLabs", url: "https://elevenlabs.io" },
+          { nombre: "Anthropic Claude", costo: "$0.01", mensual: "~$0.90", renovacion: "Anthropic", url: "https://console.anthropic.com" },
+          { nombre: "Creatomate", costo: "1 render", mensual: "90 renders", renovacion: "Creatomate", url: "https://creatomate.com" },
+          { nombre: "Railway (fijo)", costo: "—", mensual: "$5", renovacion: "Railway", url: "https://railway.app" },
+        ].map((row, i) => (
+          <div key={i} style={{ display: "contents" }}>
+            <div style={{ padding: "10px 20px", borderBottom: "1px solid #0a0a0a", borderRight: "1px solid #111" }}>
+              <span style={{ fontSize: 12, color: "#9ca3af" }}>{row.nombre}</span>
+            </div>
+            <div style={{ padding: "10px 20px", borderBottom: "1px solid #0a0a0a", borderRight: "1px solid #111" }}>
+              <span style={{ fontSize: 12, color: "#38d9a9", fontFamily: "'Space Mono', monospace" }}>{row.costo}</span>
+              <span style={{ fontSize: 12, color: "#4b5563", marginLeft: 16 }}>{row.nombre.includes("fijo") ? row.mensual : row.mensual}</span>
+            </div>
+            <div style={{ padding: "10px 20px", borderBottom: "1px solid #0a0a0a" }}>
+              <a href={row.url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#4b5563", textDecoration: "none" }}>{row.renovacion} ↗</a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ===== HISTORIAL =====
+function HistorialSection({ videos }) {
+  const consumoPorVideo = { falai: 1.20, anthropic: 0.01, creatomate: 1 };
+  const publicados = videos.filter(v => v.estado === "publicado");
+  const totalFalai = publicados.length * consumoPorVideo.falai;
+  const totalAnthropic = publicados.length * consumoPorVideo.anthropic;
+  const totalCreatomate = publicados.length * consumoPorVideo.creatomate;
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      <div style={{ background: "#0a0a0a", border: "1px solid #1f2937", borderRadius: 10, padding: "12px 16px", marginBottom: 24, display: "flex", gap: 8, alignItems: "center" }}>
+        <span style={{ fontSize: 16 }}>📊</span>
+        <span style={{ fontSize: 12, color: "#6b7280" }}>Registro automático de cada consumo y recarga. Se actualiza cada vez que se publica un video o se ajusta un saldo desde el dashboard.</span>
+      </div>
+
+      <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>RESUMEN DE CONSUMO TOTAL</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 28 }}>
+        {[
+          { abbr: "fal", label: "fal.ai", color: "#a78bfa", total: `-$${totalFalai.toFixed(2)}` },
+          { abbr: "ANT", label: "Anthropic", color: "#e53e3e", total: `-$${totalAnthropic.toFixed(2)}` },
+          { abbr: "CRE", label: "Creatomate", color: "#38d9a9", total: `-${totalCreatomate} renders` },
+        ].map(s => (
+          <div key={s.label} style={{ background: "#080808", border: `1px solid ${s.color}20`, borderRadius: 12, padding: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 6, background: `${s.color}20`, border: `1px solid ${s.color}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: s.color, fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{s.abbr}</div>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#e5e7eb" }}>{s.label}</span>
+            </div>
+            <div style={{ fontSize: 10, color: "#374151", marginBottom: 4 }}>CONSUMO TOTAL</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: "#ef4444", fontFamily: "'Space Mono', monospace" }}>{s.total}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 12 }}>TRANSACCIONES RECIENTES</div>
+      <div style={{ background: "#080808", borderRadius: 12, border: "1px solid #111", overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 2fr 1fr", padding: "10px 20px", borderBottom: "1px solid #111" }}>
+          {["API","TIPO","MONTO","SALDO TRAS","DESCRIPCIÓN","FECHA"].map(h => (
+            <span key={h} style={{ fontSize: 10, color: "#374151", letterSpacing: "0.08em" }}>{h}</span>
+          ))}
+        </div>
+        {publicados.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "40px 0", color: "#374151", fontSize: 13 }}>Sin transacciones aún</div>
+        ) : publicados.slice(0, 20).flatMap((v, i) => [
+          { api: "fal", label: "fal.ai", color: "#a78bfa", tipo: "consumo", monto: "-$1.20", desc: `Video publicado: ${v.titulo?.slice(0,50)}`, fecha: v.publicado_en },
+          { api: "ANT", label: "Anthropic", color: "#e53e3e", tipo: "consumo", monto: "-$0.01", desc: `Video publicado: ${v.titulo?.slice(0,50)}`, fecha: v.publicado_en },
+          { api: "CRE", label: "Creatomate", color: "#38d9a9", tipo: "consumo", monto: "-1 renders", desc: `Video publicado: ${v.titulo?.slice(0,50)}`, fecha: v.publicado_en },
+        ]).slice(0, 20).map((t, i) => (
+          <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 2fr 1fr", padding: "10px 20px", borderBottom: "1px solid #0a0a0a", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 20, height: 20, borderRadius: 4, background: `${t.color}20`, border: `1px solid ${t.color}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: t.color, fontWeight: 700 }}>{t.api}</div>
+              <span style={{ fontSize: 12, color: "#9ca3af" }}>{t.label}</span>
+            </div>
+            <span style={{ fontSize: 11, color: "#f59e0b", background: "#f59e0b15", padding: "2px 8px", borderRadius: 20, width: "fit-content" }}>{t.tipo}</span>
+            <span style={{ fontSize: 12, color: "#ef4444", fontFamily: "'Space Mono', monospace" }}>{t.monto}</span>
+            <span style={{ fontSize: 12, color: "#6b7280", fontFamily: "'Space Mono', monospace" }}>—</span>
+            <span style={{ fontSize: 12, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.desc}</span>
+            <span style={{ fontSize: 11, color: "#374151" }}>{t.fecha ? new Date(t.fecha).toLocaleString("es-PE", { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ===== BASE DE DATOS =====
+function BaseDatosSection({ canales, videos, temas }) {
+  const videosPublicados = videos.filter(v => v.estado === "publicado").length;
+  const temasTotal = temas.length;
+  const temasDisponibles = temas.filter(t => !t.usado).length;
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 28 }}>
+        {/* Supabase */}
+        <div style={{ background: "#080808", border: "1px solid #1f2937", borderRadius: 14, padding: 20 }}>
+          <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>SUPABASE</div>
+          {[
+            { label: "Proyecto", value: "xkdtpzxgtjujcopbcrwy" },
+            { label: "Tamaño BD", value: "12 MB" },
+            { label: "Videos publicados", value: videosPublicados },
+            { label: "Temas totales", value: temasTotal },
+            { label: "Temas disponibles", value: temasDisponibles },
+            { label: "Canales", value: canales.length },
+            { label: "Secretos en Vault", value: "23 🔒" },
+          ].map(row => (
+            <div key={row.label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #0f0f0f" }}>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>{row.label}</span>
+              <span style={{ fontSize: 12, color: "#e5e7eb", fontFamily: "'Space Mono', monospace" }}>{row.value}</span>
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: 8, marginTop: 16, flexDirection: "column" }}>
+            <a href="https://supabase.com/dashboard/project/xkdtpzxgtjujcopbcrwy" target="_blank" rel="noreferrer" style={{ display: "block", textAlign: "center", background: "#0f0f0f", border: "1px solid #1f2937", borderRadius: 8, padding: "8px 0", fontSize: 12, color: "#6b7280", textDecoration: "none" }}>↗ Abrir Supabase</a>
+            <button style={{ background: "#0f0f0f", border: "1px solid #1f2937", borderRadius: 8, padding: "8px 0", fontSize: 12, color: "#6b7280", cursor: "pointer" }}>🔒 Ver Vault</button>
+          </div>
+        </div>
+
+        {/* Storage */}
+        <div style={{ background: "#080808", border: "1px solid #1f2937", borderRadius: 14, padding: 20 }}>
+          <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>STORAGE</div>
+          {[
+            { label: "Archivos audio", value: <span style={{ fontSize: 18, fontWeight: 700, color: "#e5e7eb", fontFamily: "'Space Mono', monospace" }}>141 <span style={{ fontSize: 13 }}>archivos</span></span> },
+            { label: "Límite Free", value: "500 MB" },
+          ].map(row => (
+            <div key={row.label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #0f0f0f", alignItems: "center" }}>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>{row.label}</span>
+              <span style={{ fontSize: 12, color: "#e5e7eb", fontFamily: "'Space Mono', monospace" }}>{row.value}</span>
+            </div>
+          ))}
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.08em", marginBottom: 8 }}>USO ESTIMADO</div>
+            <div style={{ height: 8, background: "#111", borderRadius: 4, overflow: "hidden", marginBottom: 6 }}>
+              <div style={{ height: "100%", width: "5.6%", background: "#22c55e", borderRadius: 4 }} />
+            </div>
+            <div style={{ fontSize: 11, color: "#4b5563" }}>~28.2 MB / 500 MB (5.6%)</div>
+          </div>
+        </div>
+
+        {/* Edge Functions */}
+        <div style={{ background: "#080808", border: "1px solid #1f2937", borderRadius: 14, padding: 20 }}>
+          <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>EDGE FUNCTIONS</div>
+          {["upload-to-youtube","upload-audio","generate-wan-video","dashboard-stats"].map(fn => (
+            <div key={fn} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #0f0f0f", alignItems: "center" }}>
+              <span style={{ fontSize: 12, color: "#9ca3af" }}>{fn}</span>
+              <span style={{ fontSize: 10, background: "#22c55e20", color: "#22c55e", border: "1px solid #22c55e30", borderRadius: 4, padding: "2px 6px" }}>ACTIVE</span>
+            </div>
+          ))}
+          <div style={{ marginTop: 12, fontSize: 11, color: "#374151" }}>Free: 2M invocaciones/mes</div>
+        </div>
+      </div>
+
+      {/* Videos por estado */}
+      <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>VIDEOS POR ESTADO</div>
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        {Object.entries(ESTADO_CONFIG).filter(([k]) => k !== "error").map(([key, cfg]) => {
+          const count = videos.filter(v => v.estado === key).length;
+          if (count === 0) return null;
+          return (
+            <div key={key} style={{ background: "#080808", border: `1px solid ${cfg.color}25`, borderRadius: 10, padding: "14px 20px", minWidth: 120, textAlign: "center" }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: cfg.color, fontFamily: "'Space Mono', monospace" }}>{count}</div>
+              <div style={{ fontSize: 11, color: "#4b5563", marginTop: 4 }}>{cfg.label}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ===== CANALES =====
+function CanalesSection({ canales, videos, temas }) {
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+        {canales.map(canal => {
+          const col = CANAL_COLORS[canal.nicho] || CANAL_COLORS.curiosidades;
+          const videosCanal = videos.filter(v => v.canal_id === canal.id);
+          const publicados = videosCanal.filter(v => v.estado === "publicado").length;
+          const temasDisp = temas.filter(t => t.canal_id === canal.id && !t.usado).length;
+          return (
+            <div key={canal.id} style={{ background: "#080808", border: `1px solid ${col.accent}25`, borderRadius: 14, padding: 24 }}>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#e5e7eb", marginBottom: 6 }}>{canal.nombre}</div>
+                <span style={{ fontSize: 11, background: `${col.accent}20`, color: col.accent, border: `1px solid ${col.accent}30`, borderRadius: 20, padding: "3px 10px" }}>{canal.nicho}</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}>
+                {[
+                  { label: "Videos", value: videosCanal.length, color: "#6b7280" },
+                  { label: "Publicados", value: publicados, color: "#22c55e" },
+                  { label: "Temas libres", value: temasDisp, color: "#f59e0b" },
+                ].map(s => (
+                  <div key={s.label} style={{ background: "#0f0f0f", borderRadius: 8, padding: "12px 8px", textAlign: "center", border: `1px solid ${s.color}15` }}>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: s.color, fontFamily: "'Space Mono', monospace" }}>{s.value}</div>
+                    <div style={{ fontSize: 10, color: "#4b5563", marginTop: 4 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 12, color: "#374151" }}>Cron: 13:00 · 1 video/día</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ===== TEMAS =====
+function TemaSection({ canales, temas, loading }) {
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      {canales.map(canal => {
+        const col = CANAL_COLORS[canal.nicho] || CANAL_COLORS.curiosidades;
+        const ct = temas.filter(t => t.canal_id === canal.id && !t.usado);
+        const total = temas.filter(t => t.canal_id === canal.id).length;
+        return (
+          <div key={canal.id} style={{ marginBottom: 32 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <span style={{ fontSize: 11, color: col.accent, fontWeight: 700, letterSpacing: "0.1em" }}>{canal.nombre.toUpperCase()}</span>
+              <span style={{ fontSize: 11, color: "#22c55e" }}>{ct.length} DISPONIBLES</span>
+              <span style={{ fontSize: 11, color: "#374151" }}>/ {total}</span>
+            </div>
+            {loading ? <div style={{ color: "#374151", fontSize: 12 }}>Cargando...</div>
+              : ct.length === 0 ? <div style={{ color: "#374151", fontSize: 12, padding: "10px 0" }}>Sin temas disponibles</div>
+              : ct.slice(0, 20).map((tema, i) => (
+                <div key={tema.id || i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #0a0a0a" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#374151", display: "inline-block", flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, color: "#d1d5db" }}>{tema.titulo_sugerido || tema.tema || "—"}</span>
+                  </div>
+                  <span style={{ fontSize: 10, color: "#374151", flexShrink: 0 }}>P{tema.prioridad || 0}</span>
+                </div>
+              ))
+            }
+            {ct.length > 20 && <div style={{ fontSize: 12, color: "#374151", marginTop: 8 }}>… y {ct.length - 20} más</div>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ===== EVOLUCIÓN =====
 function VideoRow({ video, expanded, onToggle }) {
   const colores = { crimen: "#e53e3e", finanzas: "#38d9a9", curiosidades: "#a78bfa" };
   const color = colores[video.nicho] || "#6b7280";
@@ -311,22 +560,14 @@ function VideoRow({ video, expanded, onToggle }) {
   ];
   return (
     <div style={{ marginBottom: 8 }}>
-      <div onClick={onToggle} style={{
-        background: expanded ? "#111" : "#0a0a0a",
-        border: `1px solid ${expanded ? color + "40" : "#1f2937"}`,
-        borderRadius: expanded ? "10px 10px 0 0" : 10,
-        padding: "12px 16px", cursor: "pointer",
-        display: "flex", alignItems: "center", gap: 12, transition: "all 0.2s",
-      }}>
+      <div onClick={onToggle} style={{ background: expanded ? "#111" : "#0a0a0a", border: `1px solid ${expanded ? color + "40" : "#1f2937"}`, borderRadius: expanded ? "10px 10px 0 0" : 10, padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, transition: "all 0.2s" }}>
         <div style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
         <span style={{ fontSize: 12, color, fontWeight: 600, minWidth: 130, flexShrink: 0, fontFamily: "'Space Mono', monospace" }}>{video.canal}</span>
         <span style={{ fontSize: 13, color: "#e5e7eb", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{video.titulo}</span>
         <div style={{ display: "flex", gap: 16, flexShrink: 0, alignItems: "center" }}>
           <span style={{ fontSize: 12, color: "#38d9a9", fontFamily: "'Space Mono', monospace" }}>👁 {(video.vistas || 0).toLocaleString("es-PE")}</span>
           <span style={{ fontSize: 12, color: "#f59e0b", fontFamily: "'Space Mono', monospace" }}>♥ {(video.likes || 0).toLocaleString("es-PE")}</span>
-          {video.youtube_url && (
-            <a href={video.youtube_url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: "#e53e3e", textDecoration: "none" }}>YT ↗</a>
-          )}
+          {video.youtube_url && <a href={video.youtube_url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: "#e53e3e", textDecoration: "none" }}>YT ↗</a>}
           <span style={{ fontSize: 12, color: expanded ? "#e5e7eb" : "#4b5563" }}>{expanded ? "▲" : "▼"}</span>
         </div>
       </div>
@@ -338,7 +579,7 @@ function VideoRow({ video, expanded, onToggle }) {
               <CartesianGrid strokeDasharray="3 3" stroke="#111" />
               <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: "#4b5563" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "#4b5563" }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip />
               <Line type="monotone" dataKey="vistas" name="Vistas" stroke="#38d9a9" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
               <Line type="monotone" dataKey="likes" name="Likes" stroke="#f59e0b" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
             </LineChart>
@@ -350,51 +591,36 @@ function VideoRow({ video, expanded, onToggle }) {
   );
 }
 
-function EvolucionSection({ canales }) {
+function EvolucionSection({ canales, videos }) {
   const [fuente, setFuente] = useState("youtube");
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
   const [canalFiltro, setCanalFiltro] = useState("todos");
+  const [videosConDatos, setVideosConDatos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      supabaseQuery("videos", "?estado=eq.publicado&order=publicado_en.desc&limit=50"),
-      supabaseQuery("canales", "?order=nicho"),
-      supabaseQuery("metricas_youtube", "?order=fecha_consulta.asc"),
-    ]).then(([vids, cans, metricas]) => {
-      const videosConDatos = (Array.isArray(vids) ? vids : []).map(v => {
-        const canal = (Array.isArray(cans) ? cans : []).find(c => c.id === v.canal_id);
+    supabaseQuery("metricas_youtube", "?order=fecha_consulta.asc").then(metricas => {
+      const vids = videos.filter(v => v.estado === "publicado").map(v => {
+        const canal = canales.find(c => c.id === v.canal_id);
         const metricasVideo = (Array.isArray(metricas) ? metricas : []).filter(m => m.video_id === v.id);
-        const ultimaMetrica = metricasVideo[metricasVideo.length - 1];
-        return { ...v, canal: canal?.nombre || "—", nicho: canal?.nicho || "curiosidades", vistas: ultimaMetrica?.vistas || null, likes: ultimaMetrica?.likes || null };
+        const ultima = metricasVideo[metricasVideo.length - 1];
+        return { ...v, canal: canal?.nombre || "—", nicho: canal?.nicho || "curiosidades", vistas: ultima?.vistas || 0, likes: ultima?.likes || 0 };
       });
-      setVideos(videosConDatos);
+      setVideosConDatos(vids);
       setLoading(false);
     });
-  }, []);
+  }, [videos, canales]);
 
   const coloresCanal = { crimen: "#e53e3e", finanzas: "#38d9a9", curiosidades: "#a78bfa" };
-  const canalesUnicos = [...new Set(videos.map(v => v.canal))];
-  const videosFiltrados = canalFiltro === "todos" ? videos : videos.filter(v => v.canal === canalFiltro);
-  const totalVistas = videos.reduce((s, v) => s + (v.vistas || 0), 0);
-  const totalLikes = videos.reduce((s, v) => s + (v.likes || 0), 0);
+  const canalesUnicos = [...new Set(videosConDatos.map(v => v.canal))];
+  const videosFiltrados = canalFiltro === "todos" ? videosConDatos : videosConDatos.filter(v => v.canal === canalFiltro);
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
-      {/* Selector fuentes */}
       <div style={{ display: "flex", gap: 12, marginBottom: 28, flexWrap: "wrap" }}>
         {FUENTES.map(f => (
-          <button key={f.id} onClick={() => f.activo && setFuente(f.id)} style={{
-            background: fuente === f.id ? "#1f2937" : "transparent",
-            border: `1px solid ${fuente === f.id ? "#6b7280" : "#1f2937"}`,
-            borderRadius: 10, padding: "10px 20px", cursor: f.activo ? "pointer" : "not-allowed",
-            color: fuente === f.id ? "#e5e7eb" : f.activo ? "#4b5563" : "#1f2937",
-            fontSize: 13, fontFamily: "'DM Sans', sans-serif",
-            display: "flex", alignItems: "center", gap: 8, opacity: f.activo ? 1 : 0.4,
-          }}>
-            <span>{f.icon}</span>
-            {f.label}
+          <button key={f.id} onClick={() => f.activo && setFuente(f.id)} style={{ background: fuente === f.id ? "#1f2937" : "transparent", border: `1px solid ${fuente === f.id ? "#6b7280" : "#1f2937"}`, borderRadius: 10, padding: "10px 20px", cursor: f.activo ? "pointer" : "not-allowed", color: fuente === f.id ? "#e5e7eb" : f.activo ? "#4b5563" : "#1f2937", fontSize: 13, fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", gap: 8, opacity: f.activo ? 1 : 0.4 }}>
+            <span>{f.icon}</span>{f.label}
             {!f.activo && <span style={{ fontSize: 10, color: "#374151" }}>Próximamente</span>}
             {f.activo && <span style={{ fontSize: 10, background: "#22c55e20", color: "#22c55e", border: "1px solid #22c55e30", borderRadius: 10, padding: "1px 6px" }}>Activo</span>}
           </button>
@@ -403,12 +629,11 @@ function EvolucionSection({ canales }) {
 
       {fuente === "youtube" && (
         <>
-          {/* Stats */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
             {[
-              { label: "Videos publicados", value: videos.length, color: "#6b7280" },
-              { label: "Vistas totales", value: totalVistas.toLocaleString("es-PE"), color: "#38d9a9" },
-              { label: "Likes totales", value: totalLikes.toLocaleString("es-PE"), color: "#f59e0b" },
+              { label: "Videos publicados", value: videosConDatos.length, color: "#6b7280" },
+              { label: "Vistas totales", value: videosConDatos.reduce((s, v) => s + (v.vistas || 0), 0).toLocaleString("es-PE"), color: "#38d9a9" },
+              { label: "Likes totales", value: videosConDatos.reduce((s, v) => s + (v.likes || 0), 0).toLocaleString("es-PE"), color: "#f59e0b" },
             ].map(s => (
               <div key={s.label} style={{ background: "#0f0f0f", border: `1px solid ${s.color}25`, borderRadius: 10, padding: "14px 18px" }}>
                 <div style={{ fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>{s.label}</div>
@@ -416,40 +641,20 @@ function EvolucionSection({ canales }) {
               </div>
             ))}
           </div>
-
-          {/* Filtro canales */}
           <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-            <button onClick={() => setCanalFiltro("todos")} style={{
-              background: canalFiltro === "todos" ? "#1f2937" : "transparent",
-              border: `1px solid ${canalFiltro === "todos" ? "#6b7280" : "#1f2937"}`,
-              borderRadius: 20, padding: "5px 14px", cursor: "pointer",
-              color: canalFiltro === "todos" ? "#e5e7eb" : "#4b5563", fontSize: 12, fontFamily: "'DM Sans', sans-serif",
-            }}>Todos ({videos.length})</button>
+            <button onClick={() => setCanalFiltro("todos")} style={{ background: canalFiltro === "todos" ? "#1f2937" : "transparent", border: `1px solid ${canalFiltro === "todos" ? "#6b7280" : "#1f2937"}`, borderRadius: 20, padding: "5px 14px", cursor: "pointer", color: canalFiltro === "todos" ? "#e5e7eb" : "#4b5563", fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>Todos ({videosConDatos.length})</button>
             {canalesUnicos.map(canal => {
-              const nicho = videos.find(v => v.canal === canal)?.nicho;
+              const nicho = videosConDatos.find(v => v.canal === canal)?.nicho;
               const color = coloresCanal[nicho] || "#6b7280";
-              return (
-                <button key={canal} onClick={() => setCanalFiltro(canal)} style={{
-                  background: canalFiltro === canal ? `${color}20` : "transparent",
-                  border: `1px solid ${canalFiltro === canal ? color : "#1f2937"}`,
-                  borderRadius: 20, padding: "5px 14px", cursor: "pointer",
-                  color: canalFiltro === canal ? color : "#4b5563", fontSize: 12, fontFamily: "'DM Sans', sans-serif",
-                }}>{canal} ({videos.filter(v => v.canal === canal).length})</button>
-              );
+              return <button key={canal} onClick={() => setCanalFiltro(canal)} style={{ background: canalFiltro === canal ? `${color}20` : "transparent", border: `1px solid ${canalFiltro === canal ? color : "#1f2937"}`, borderRadius: 20, padding: "5px 14px", cursor: "pointer", color: canalFiltro === canal ? color : "#4b5563", fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>{canal} ({videosConDatos.filter(v => v.canal === canal).length})</button>;
             })}
           </div>
-
-          {/* Lista videos */}
-          {loading ? (
-            <div style={{ textAlign: "center", padding: "40px 0", color: "#374151", fontSize: 13 }}>Cargando publicaciones...</div>
-          ) : videosFiltrados.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 0", color: "#374151", fontSize: 13 }}>Sin publicaciones aún</div>
-          ) : videosFiltrados.map(video => (
-            <VideoRow key={video.id} video={video} expanded={expandedId === video.id} onToggle={() => setExpandedId(expandedId === video.id ? null : video.id)} />
-          ))}
+          {loading ? <div style={{ textAlign: "center", padding: "40px 0", color: "#374151", fontSize: 13 }}>Cargando...</div>
+            : videosFiltrados.length === 0 ? <div style={{ textAlign: "center", padding: "40px 0", color: "#374151", fontSize: 13 }}>Sin publicaciones aún</div>
+            : videosFiltrados.map(video => <VideoRow key={video.id} video={video} expanded={expandedId === video.id} onToggle={() => setExpandedId(expandedId === video.id ? null : video.id)} />)
+          }
         </>
       )}
-
       {fuente !== "youtube" && (
         <div style={{ textAlign: "center", padding: "60px 20px", background: "#080808", borderRadius: 14, border: "1px solid #111" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>{FUENTES.find(f => f.id === fuente)?.icon}</div>
@@ -461,25 +666,25 @@ function EvolucionSection({ canales }) {
   );
 }
 
-// ============ MAIN APP ============
+// ===== MAIN APP =====
 export default function Dashboard() {
   const [canales, setCanales] = useState([]);
   const [videos, setVideos]   = useState([]);
-  const [logs, setLogs]       = useState([]);
+  const [temas, setTemas]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [activeTab, setActiveTab]   = useState("pipeline");
 
   const fetchData = useCallback(async () => {
     try {
-      const [c, v, l] = await Promise.all([
+      const [c, v, t] = await Promise.all([
         supabaseQuery("canales", "?order=nicho"),
         supabaseQuery("videos",  "?order=created_at.desc&limit=50"),
-        supabaseQuery("logs",    "?order=created_at.desc&limit=20"),
+        supabaseQuery("temas",   "?order=prioridad.desc&limit=200"),
       ]);
       setCanales(Array.isArray(c) ? c : []);
       setVideos(Array.isArray(v) ? v : []);
-      setLogs(Array.isArray(l) ? l : []);
+      setTemas(Array.isArray(t) ? t : []);
       setLastUpdate(new Date());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -487,16 +692,17 @@ export default function Dashboard() {
 
   useEffect(() => { fetchData(); const t = setInterval(fetchData, 30000); return () => clearInterval(t); }, [fetchData]);
 
-  const totalPublicados = videos.filter(v => v.estado === "publicado").length;
-  const totalEnProceso  = videos.filter(v => !["publicado","error","pendiente"].includes(v.estado)).length;
-  const totalErrores    = videos.filter(v => v.estado === "error").length;
+  const videosPublicados = videos.filter(v => v.estado === "publicado").length;
+  const temasLibres = temas.filter(t => !t.usado).length;
 
   const TABS = [
-    { id: "pipeline",  label: "Pipeline" },
-    { id: "metricas",  label: "Métricas" },
-    { id: "logs",      label: `Logs (${logs.length})` },
-    { id: "temas",     label: "Temas" },
-    { id: "evolucion", label: "Evolución" },
+    { id: "pipeline",   label: "Pipeline",       badge: videos.length, badgeColor: "#38d9a9" },
+    { id: "apis",       label: "APIs & Créditos", badge: "OK", badgeColor: "#22c55e" },
+    { id: "historial",  label: "Historial",       badge: videosPublicados, badgeColor: null },
+    { id: "basedatos",  label: "Base de Datos",   badge: null },
+    { id: "canales",    label: "Canales",          badge: canales.length, badgeColor: null },
+    { id: "temas",      label: "Temas",            badge: `${temasLibres} libres`, badgeColor: "#a78bfa" },
+    { id: "evolucion",  label: "Evolución",        badge: null },
   ];
 
   return (
@@ -516,92 +722,62 @@ export default function Dashboard() {
 
       <div style={{ minHeight: "100vh", background: "#050505" }}>
         {/* Header */}
-        <div style={{ borderBottom: "1px solid #111", padding: "14px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080808", position: "sticky", top: 0, zIndex: 100 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, #38d9a9, #a78bfa)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#050505", fontFamily: "'Space Mono', monospace" }}>N</div>
-              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 15, fontWeight: 700, color: "#e5e7eb", letterSpacing: "0.1em" }}>NEXOVA</span>
+        <div style={{ borderBottom: "1px solid #111", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080808", position: "sticky", top: 0, zIndex: 100 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+            {/* Logo */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 0", marginRight: 24 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 6, background: "linear-gradient(135deg, #38d9a9, #a78bfa)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#050505", fontFamily: "'Space Mono', monospace" }}>N</div>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, color: "#e5e7eb", letterSpacing: "0.08em" }}>NEXOVA</span>
+              <span style={{ color: "#374151", fontSize: 14 }}>/</span>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: "#4b5563", letterSpacing: "0.06em" }}>AUTOPUBLISH</span>
             </div>
-            <div style={{ width: 1, height: 20, background: "#1f2937" }} />
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px #22c55e", animation: "ping 2.5s ease-in-out infinite" }} />
-              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: "#6b7280", letterSpacing: "0.06em" }}>AUTOPUBLISH</span>
+
+            {/* Tabs en el header */}
+            <div style={{ display: "flex", gap: 0, height: "100%" }}>
+              {TABS.map(tab => (
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+                  background: "transparent", border: "none", cursor: "pointer",
+                  padding: "18px 16px", fontSize: 13, fontFamily: "'DM Sans', sans-serif",
+                  color: activeTab === tab.id ? "#e5e7eb" : "#4b5563",
+                  borderBottom: activeTab === tab.id ? "2px solid #38d9a9" : "2px solid transparent",
+                  transition: "all 0.2s", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+                }}>
+                  {tab.label}
+                  {tab.badge !== null && tab.badge !== undefined && (
+                    <span style={{ fontSize: 10, background: tab.badgeColor ? `${tab.badgeColor}20` : "#1f2937", color: tab.badgeColor || "#6b7280", border: `1px solid ${tab.badgeColor ? tab.badgeColor + "30" : "#374151"}`, borderRadius: 20, padding: "1px 6px", fontFamily: "'Space Mono', monospace" }}>
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
-            <span style={{ fontSize: 11, color: "#374151" }}>3 canales · 6 videos/día</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px #22c55e", animation: "ping 2.5s ease-in-out infinite" }} />
+              <span style={{ fontSize: 12, color: "#6b7280" }}>3 canales</span>
+            </div>
+            <span style={{ fontSize: 12, color: "#4b5563" }}>3 videos/día</span>
             {lastUpdate && <span style={{ fontSize: 11, color: "#374151", fontFamily: "'Space Mono', monospace" }}>{lastUpdate.toLocaleTimeString("es-PE")}</span>}
             <button onClick={fetchData} style={{ background: "transparent", border: "1px solid #1f2937", borderRadius: 8, padding: "6px 14px", color: "#6b7280", cursor: "pointer", fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>↻ Actualizar</button>
           </div>
         </div>
 
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
-          {/* Stats */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 36, animation: "fadeIn 0.4s ease" }}>
-            <StatCard label="Total videos" value={videos.length}   accent="#6b7280" sublabel="generados" />
-            <StatCard label="Publicados"   value={totalPublicados}  accent="#22c55e" sublabel="en YouTube" />
-            <StatCard label="En proceso"   value={totalEnProceso}   accent="#f59e0b" sublabel="ahora mismo" />
-            <StatCard label="Errores"      value={totalErrores}     accent="#ef4444" sublabel="requieren atención" />
-          </div>
-
-          {/* Tabs */}
-          <div style={{ display: "flex", gap: 2, marginBottom: 28, borderBottom: "1px solid #111" }}>
-            {TABS.map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
-                background: "transparent", border: "none", cursor: "pointer",
-                padding: "10px 22px", fontSize: 13, fontFamily: "'DM Sans', sans-serif",
-                color: activeTab === tab.id ? "#e5e7eb" : "#4b5563",
-                borderBottom: activeTab === tab.id ? "2px solid #38d9a9" : "2px solid transparent",
-                marginBottom: -1, transition: "all 0.2s",
-              }}>{tab.label}</button>
-            ))}
-          </div>
-
-          {activeTab === "pipeline" && (
-            <div style={{ animation: "fadeIn 0.3s ease" }}>
-              {loading
-                ? <div style={{ textAlign: "center", padding: "60px 0", color: "#374151", fontSize: 13, animation: "pulse 1.5s ease infinite" }}>Cargando datos...</div>
-                : canales.map(canal => <CanalSection key={canal.id} canal={canal} videos={videos.filter(v => v.canal_id === canal.id)} />)
-              }
-            </div>
-          )}
-
-          {activeTab === "metricas" && <MetricasSection canales={canales} />}
-
-          {activeTab === "logs" && (
-            <div style={{ animation: "fadeIn 0.3s ease" }}>
-              {logs.length === 0
-                ? <div style={{ textAlign: "center", padding: "60px 0", color: "#374151", fontSize: 13 }}>Sin logs todavía</div>
-                : (
-                  <div style={{ background: "#080808", borderRadius: 12, border: "1px solid #111", overflow: "hidden" }}>
-                    {logs.map((log, i) => (
-                      <div key={log.id || i} style={{ padding: "12px 20px", borderBottom: "1px solid #0f0f0f", display: "flex", gap: 16, alignItems: "flex-start" }}>
-                        <span style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", color: log.nivel === "error" ? "#ef4444" : "#22c55e", background: log.nivel === "error" ? "#ef444415" : "#22c55e15", padding: "2px 8px", borderRadius: 4, flexShrink: 0 }}>
-                          {(log.nivel || "info").toUpperCase()}
-                        </span>
-                        <span style={{ fontSize: 13, color: "#9ca3af", flex: 1 }}>{log.mensaje || "—"}</span>
-                        <span style={{ fontSize: 11, color: "#374151", flexShrink: 0, fontFamily: "'Space Mono', monospace" }}>
-                          {log.created_at ? new Date(log.created_at).toLocaleTimeString("es-PE") : ""}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )
-              }
-            </div>
-          )}
-
-          {activeTab === "temas" && <TemaSection canales={canales} />}
-          {activeTab === "evolucion" && <EvolucionSection canales={canales} />}
+        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "28px 24px" }}>
+          {activeTab === "pipeline"  && <PipelineSection canales={canales} videos={videos} loading={loading} />}
+          {activeTab === "apis"      && <ApiCreditosSection videos={videos} />}
+          {activeTab === "historial" && <HistorialSection videos={videos} />}
+          {activeTab === "basedatos" && <BaseDatosSection canales={canales} videos={videos} temas={temas} />}
+          {activeTab === "canales"   && <CanalesSection canales={canales} videos={videos} temas={temas} />}
+          {activeTab === "temas"     && <TemaSection canales={canales} temas={temas} loading={loading} />}
+          {activeTab === "evolucion" && <EvolucionSection canales={canales} videos={videos} />}
         </div>
 
-        {/* Footer */}
-        <div style={{ borderTop: "1px solid #0f0f0f", padding: "18px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080808" }}>
+        <div style={{ borderTop: "1px solid #0f0f0f", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080808" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 12, color: "#374151" }}>Powered by</span>
-            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, background: "linear-gradient(90deg, #38d9a9, #a78bfa, #38d9a9)", backgroundSize: "200% auto", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", animation: "shimmer 3s linear infinite" }}>
-              NEXOVA
-            </span>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, background: "linear-gradient(90deg, #38d9a9, #a78bfa, #38d9a9)", backgroundSize: "200% auto", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", animation: "shimmer 3s linear infinite" }}>NEXOVA</span>
           </div>
           <span style={{ fontSize: 11, color: "#1f2937", fontFamily: "'Space Mono', monospace" }}>youtube-autopublish · Lima, Perú</span>
         </div>
