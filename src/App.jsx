@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const SUPABASE_URL = "https://xkdtpzxgtjujcopbcrwy.supabase.co";
-const SUPABASE_KEY = "sb_secret_5_MM0gfEwj98aECGpEqDwA_Dd4PR8o2";
+const SUPABASE_KEY = "sb_publishable_aXfbAJgR9pdsguLhJlvaqA_x3J1S1Xmb3OVVgfS";
 
 const CANAL_COLORS = {
   crimen:       { accent: "#e53e3e", glow: "#e53e3e40" },
