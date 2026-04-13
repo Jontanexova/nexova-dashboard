@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
+import EvolucionSection from './EvolucionSection.jsx';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const SUPABASE_URL = "https://xkdtpzxgtjujcopbcrwy.supabase.co";
-const SUPABASE_KEY = "sb_publishable_aXfbAJgR9pdsguLhJlvaqA_x3J1S1Xmb3OVVgfS";
+const SUPABASE_KEY = "sb_secret_5_MM0gfEwj98aECGpEqDwA_Dd4PR8o2";
 
 const CANAL_COLORS = {
   crimen:       { accent: "#e53e3e", glow: "#e53e3e40" },
@@ -350,6 +351,7 @@ export default function Dashboard() {
     { id: "metricas", label: "Métricas" },
     { id: "logs",     label: `Logs (${logs.length})` },
     { id: "temas",    label: "Temas" },
+    { id: "evolucion", label: "Evolución" },
   ];
 
   return (
@@ -447,6 +449,8 @@ export default function Dashboard() {
           )}
 
           {activeTab === "temas" && <TemaSection canales={canales} />}
+
+          {activeTab === "evolucion" && <EvolucionSection canales={canales} />}
 
         </div>
 
