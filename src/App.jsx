@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import EvolucionSection from './EvolucionSection.jsx';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const SUPABASE_URL = "https://xkdtpzxgtjujcopbcrwy.supabase.co";
 const SUPABASE_KEY = "sb_secret_5_MM0gfEwj98aECGpEqDwA_Dd4PR8o2";
@@ -37,6 +36,13 @@ const METRICAS_CONFIG = [
   { key: "comentarios",          label: "Comentarios",  color: "#e53e3e" },
   { key: "ctr",                  label: "CTR %",        color: "#22c55e" },
   { key: "retencion_promedio_pct", label: "Retención %", color: "#60a5fa" },
+];
+
+const FUENTES = [
+  { id: "youtube",   label: "YouTube",   activo: true,  icon: "▶" },
+  { id: "tiktok",    label: "TikTok",    activo: false, icon: "♪" },
+  { id: "facebook",  label: "Facebook",  activo: false, icon: "f" },
+  { id: "instagram", label: "Instagram", activo: false, icon: "◉" },
 ];
 
 async function supabaseQuery(table, params = "") {
@@ -123,7 +129,7 @@ function CanalSection({ canal, videos }) {
         ))}
       </div>
       {videos.length === 0
-        ? <div style={{ textAlign: "center", padding: "20px 0", color: "#374151", fontSize: 13 }}>Sin videos aún — el pipeline disparará a las 8am y 6pm</div>
+        ? <div style={{ textAlign: "center", padding: "20px 0", color: "#374151", fontSize: 13 }}>Sin videos aún — el pipeline disparará a las 12pm y 6pm</div>
         : videos.slice(0, 5).map(v => <VideoCard key={v.id} video={v} canalNicho={canal.nicho} />)
       }
     </div>
@@ -158,8 +164,7 @@ function MetricasSection({ canales }) {
     if (metricas.length === 0) {
       const hoy = new Date();
       return Array.from({ length: 14 }, (_, i) => {
-        const d = new Date(hoy);
-        d.setDate(d.getDate() - (13 - i));
+        const d = new Date(hoy); d.setDate(d.getDate() - (13 - i));
         const fecha = d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
         return { fecha, "Archivo Siniestro": 0, "Dinero Consciente": 0, "Mente Inquieta": 0 };
       });
@@ -194,7 +199,6 @@ function MetricasSection({ canales }) {
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
-      {/* Tarjetas por canal */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 28 }}>
         {totales.map(t => (
           <div key={t.nombre} style={{ background: "#080808", border: `1px solid ${t.color}30`, borderRadius: 14, padding: 20, boxShadow: `0 0 20px ${t.color}15` }}>
@@ -215,8 +219,6 @@ function MetricasSection({ canales }) {
           </div>
         ))}
       </div>
-
-      {/* Selector de métrica */}
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
         {METRICAS_CONFIG.map(m => (
           <button key={m.key} onClick={() => setMetricaActiva(m.key)} style={{
@@ -228,19 +230,10 @@ function MetricasSection({ canales }) {
           }}>{m.label}</button>
         ))}
       </div>
-
-      {/* Gráfico de área */}
       <div style={{ background: "#080808", border: "1px solid #111", borderRadius: 16, padding: "24px 12px 16px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, paddingLeft: 12 }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#e5e7eb" }}>{mConfig?.label} por canal — evolución</div>
-            <div style={{ fontSize: 11, color: "#4b5563", marginTop: 3 }}>
-              {metricas.length === 0 ? "Sin datos aún — aparecerán tras el primer video publicado" : `${metricas.length} registros históricos`}
-            </div>
-          </div>
-          {metricas.length === 0 && (
-            <span style={{ fontSize: 11, color: "#374151", background: "#0f0f0f", border: "1px solid #1f2937", padding: "4px 12px", borderRadius: 20 }}>Vista previa</span>
-          )}
+        <div style={{ paddingLeft: 12, marginBottom: 20 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#e5e7eb" }}>{mConfig?.label} por canal</div>
+          <div style={{ fontSize: 11, color: "#4b5563", marginTop: 3 }}>{metricas.length === 0 ? "Sin datos aún" : `${metricas.length} registros`}</div>
         </div>
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -249,33 +242,23 @@ function MetricasSection({ canales }) {
                 const color = CANAL_CHART_COLORS[c.nombre] || "#6b7280";
                 return (
                   <linearGradient key={c.id} id={`g-${c.id}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor={color} stopOpacity={0.25} />
+                    <stop offset="5%" stopColor={color} stopOpacity={0.25} />
                     <stop offset="95%" stopColor={color} stopOpacity={0} />
                   </linearGradient>
                 );
               })}
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#111" />
-            <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: "#4b5563", fontFamily: "Space Mono" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: "#4b5563", fontFamily: "Space Mono" }} axisLine={false} tickLine={false} />
+            <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: "#4b5563" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: "#4b5563" }} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ fontSize: 12, color: "#6b7280", paddingTop: 16 }} />
             {canales.map(c => {
               const color = CANAL_CHART_COLORS[c.nombre] || "#6b7280";
-              return (
-                <Area key={c.id} type="monotone" dataKey={c.nombre}
-                  stroke={color} strokeWidth={2}
-                  fill={`url(#g-${c.id})`}
-                  dot={false} activeDot={{ r: 4, fill: color }}
-                />
-              );
+              return <Area key={c.id} type="monotone" dataKey={c.nombre} stroke={color} strokeWidth={2} fill={`url(#g-${c.id})`} dot={false} activeDot={{ r: 4, fill: color }} />;
             })}
           </AreaChart>
         </ResponsiveContainer>
-      </div>
-
-      <div style={{ marginTop: 14, padding: "12px 16px", background: "#080808", borderRadius: 10, border: "1px solid #111", fontSize: 12, color: "#374151" }}>
-        💡 Las métricas se actualizan automáticamente desde YouTube Data API. Los datos reales aparecerán tras el primer video publicado.
       </div>
     </div>
   );
@@ -301,7 +284,7 @@ function TemaSection({ canales }) {
                 : ct.length === 0 ? <div style={{ color: "#374151", fontSize: 12 }}>Sin temas cargados</div>
                 : ct.map((tema, i) => (
                   <div key={tema.id || i} style={{ padding: "8px 10px", marginBottom: 6, background: "#0f0f0f", borderRadius: 8, border: `1px solid ${tema.usado ? "#1f293740" : col.accent + "20"}`, opacity: tema.usado ? 0.4 : 1 }}>
-                    <div style={{ fontSize: 12, color: tema.usado ? "#4b5563" : "#d1d5db" }}>{tema.tema || "—"}</div>
+                    <div style={{ fontSize: 12, color: tema.usado ? "#4b5563" : "#d1d5db" }}>{tema.titulo_sugerido || "—"}</div>
                     <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                       <span style={{ fontSize: 10, color: "#374151" }}>Prioridad: {tema.prioridad || "—"}</span>
                       {tema.usado && <span style={{ fontSize: 10, color: "#22c55e" }}>✓ usado</span>}
@@ -317,6 +300,168 @@ function TemaSection({ canales }) {
   );
 }
 
+// ============ EVOLUCION SECTION ============
+function VideoRow({ video, expanded, onToggle }) {
+  const colores = { crimen: "#e53e3e", finanzas: "#38d9a9", curiosidades: "#a78bfa" };
+  const color = colores[video.nicho] || "#6b7280";
+  const fecha = new Date(video.publicado_en).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
+  const chartData = [
+    { fecha: fecha, vistas: 0, likes: 0 },
+    { fecha: "Hoy", vistas: video.vistas || 0, likes: video.likes || 0 },
+  ];
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div onClick={onToggle} style={{
+        background: expanded ? "#111" : "#0a0a0a",
+        border: `1px solid ${expanded ? color + "40" : "#1f2937"}`,
+        borderRadius: expanded ? "10px 10px 0 0" : 10,
+        padding: "12px 16px", cursor: "pointer",
+        display: "flex", alignItems: "center", gap: 12, transition: "all 0.2s",
+      }}>
+        <div style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
+        <span style={{ fontSize: 12, color, fontWeight: 600, minWidth: 130, flexShrink: 0, fontFamily: "'Space Mono', monospace" }}>{video.canal}</span>
+        <span style={{ fontSize: 13, color: "#e5e7eb", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{video.titulo}</span>
+        <div style={{ display: "flex", gap: 16, flexShrink: 0, alignItems: "center" }}>
+          <span style={{ fontSize: 12, color: "#38d9a9", fontFamily: "'Space Mono', monospace" }}>👁 {(video.vistas || 0).toLocaleString("es-PE")}</span>
+          <span style={{ fontSize: 12, color: "#f59e0b", fontFamily: "'Space Mono', monospace" }}>♥ {(video.likes || 0).toLocaleString("es-PE")}</span>
+          {video.youtube_url && (
+            <a href={video.youtube_url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: "#e53e3e", textDecoration: "none" }}>YT ↗</a>
+          )}
+          <span style={{ fontSize: 12, color: expanded ? "#e5e7eb" : "#4b5563" }}>{expanded ? "▲" : "▼"}</span>
+        </div>
+      </div>
+      {expanded && (
+        <div style={{ background: "#0a0a0a", border: `1px solid ${color}40`, borderTop: "none", borderRadius: "0 0 10px 10px", padding: 16 }}>
+          <div style={{ fontSize: 11, color: "#4b5563", marginBottom: 12 }}>Publicado: {fecha} · Evolución de métricas</div>
+          <ResponsiveContainer width="100%" height={160}>
+            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#111" />
+              <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: "#4b5563" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: "#4b5563" }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Line type="monotone" dataKey="vistas" name="Vistas" stroke="#38d9a9" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+              <Line type="monotone" dataKey="likes" name="Likes" stroke="#f59e0b" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+          <div style={{ fontSize: 11, color: "#374151", marginTop: 8, textAlign: "center" }}>Las métricas reales aparecerán cuando se conecte YouTube Analytics API</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EvolucionSection({ canales }) {
+  const [fuente, setFuente] = useState("youtube");
+  const [videos, setVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState(null);
+  const [canalFiltro, setCanalFiltro] = useState("todos");
+
+  useEffect(() => {
+    Promise.all([
+      supabaseQuery("videos", "?estado=eq.publicado&order=publicado_en.desc&limit=50"),
+      supabaseQuery("canales", "?order=nicho"),
+      supabaseQuery("metricas_youtube", "?order=fecha_consulta.asc"),
+    ]).then(([vids, cans, metricas]) => {
+      const videosConDatos = (Array.isArray(vids) ? vids : []).map(v => {
+        const canal = (Array.isArray(cans) ? cans : []).find(c => c.id === v.canal_id);
+        const metricasVideo = (Array.isArray(metricas) ? metricas : []).filter(m => m.video_id === v.id);
+        const ultimaMetrica = metricasVideo[metricasVideo.length - 1];
+        return { ...v, canal: canal?.nombre || "—", nicho: canal?.nicho || "curiosidades", vistas: ultimaMetrica?.vistas || null, likes: ultimaMetrica?.likes || null };
+      });
+      setVideos(videosConDatos);
+      setLoading(false);
+    });
+  }, []);
+
+  const coloresCanal = { crimen: "#e53e3e", finanzas: "#38d9a9", curiosidades: "#a78bfa" };
+  const canalesUnicos = [...new Set(videos.map(v => v.canal))];
+  const videosFiltrados = canalFiltro === "todos" ? videos : videos.filter(v => v.canal === canalFiltro);
+  const totalVistas = videos.reduce((s, v) => s + (v.vistas || 0), 0);
+  const totalLikes = videos.reduce((s, v) => s + (v.likes || 0), 0);
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      {/* Selector fuentes */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 28, flexWrap: "wrap" }}>
+        {FUENTES.map(f => (
+          <button key={f.id} onClick={() => f.activo && setFuente(f.id)} style={{
+            background: fuente === f.id ? "#1f2937" : "transparent",
+            border: `1px solid ${fuente === f.id ? "#6b7280" : "#1f2937"}`,
+            borderRadius: 10, padding: "10px 20px", cursor: f.activo ? "pointer" : "not-allowed",
+            color: fuente === f.id ? "#e5e7eb" : f.activo ? "#4b5563" : "#1f2937",
+            fontSize: 13, fontFamily: "'DM Sans', sans-serif",
+            display: "flex", alignItems: "center", gap: 8, opacity: f.activo ? 1 : 0.4,
+          }}>
+            <span>{f.icon}</span>
+            {f.label}
+            {!f.activo && <span style={{ fontSize: 10, color: "#374151" }}>Próximamente</span>}
+            {f.activo && <span style={{ fontSize: 10, background: "#22c55e20", color: "#22c55e", border: "1px solid #22c55e30", borderRadius: 10, padding: "1px 6px" }}>Activo</span>}
+          </button>
+        ))}
+      </div>
+
+      {fuente === "youtube" && (
+        <>
+          {/* Stats */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
+            {[
+              { label: "Videos publicados", value: videos.length, color: "#6b7280" },
+              { label: "Vistas totales", value: totalVistas.toLocaleString("es-PE"), color: "#38d9a9" },
+              { label: "Likes totales", value: totalLikes.toLocaleString("es-PE"), color: "#f59e0b" },
+            ].map(s => (
+              <div key={s.label} style={{ background: "#0f0f0f", border: `1px solid ${s.color}25`, borderRadius: 10, padding: "14px 18px" }}>
+                <div style={{ fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>{s.label}</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: s.color, fontFamily: "'Space Mono', monospace" }}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Filtro canales */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+            <button onClick={() => setCanalFiltro("todos")} style={{
+              background: canalFiltro === "todos" ? "#1f2937" : "transparent",
+              border: `1px solid ${canalFiltro === "todos" ? "#6b7280" : "#1f2937"}`,
+              borderRadius: 20, padding: "5px 14px", cursor: "pointer",
+              color: canalFiltro === "todos" ? "#e5e7eb" : "#4b5563", fontSize: 12, fontFamily: "'DM Sans', sans-serif",
+            }}>Todos ({videos.length})</button>
+            {canalesUnicos.map(canal => {
+              const nicho = videos.find(v => v.canal === canal)?.nicho;
+              const color = coloresCanal[nicho] || "#6b7280";
+              return (
+                <button key={canal} onClick={() => setCanalFiltro(canal)} style={{
+                  background: canalFiltro === canal ? `${color}20` : "transparent",
+                  border: `1px solid ${canalFiltro === canal ? color : "#1f2937"}`,
+                  borderRadius: 20, padding: "5px 14px", cursor: "pointer",
+                  color: canalFiltro === canal ? color : "#4b5563", fontSize: 12, fontFamily: "'DM Sans', sans-serif",
+                }}>{canal} ({videos.filter(v => v.canal === canal).length})</button>
+              );
+            })}
+          </div>
+
+          {/* Lista videos */}
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "40px 0", color: "#374151", fontSize: 13 }}>Cargando publicaciones...</div>
+          ) : videosFiltrados.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px 0", color: "#374151", fontSize: 13 }}>Sin publicaciones aún</div>
+          ) : videosFiltrados.map(video => (
+            <VideoRow key={video.id} video={video} expanded={expandedId === video.id} onToggle={() => setExpandedId(expandedId === video.id ? null : video.id)} />
+          ))}
+        </>
+      )}
+
+      {fuente !== "youtube" && (
+        <div style={{ textAlign: "center", padding: "60px 20px", background: "#080808", borderRadius: 14, border: "1px solid #111" }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>{FUENTES.find(f => f.id === fuente)?.icon}</div>
+          <div style={{ fontSize: 15, color: "#4b5563", marginBottom: 8 }}>{FUENTES.find(f => f.id === fuente)?.label} — Próximamente</div>
+          <div style={{ fontSize: 12, color: "#374151" }}>Integración en desarrollo.</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============ MAIN APP ============
 export default function Dashboard() {
   const [canales, setCanales] = useState([]);
   const [videos, setVideos]   = useState([]);
@@ -347,10 +492,10 @@ export default function Dashboard() {
   const totalErrores    = videos.filter(v => v.estado === "error").length;
 
   const TABS = [
-    { id: "pipeline", label: "Pipeline" },
-    { id: "metricas", label: "Métricas" },
-    { id: "logs",     label: `Logs (${logs.length})` },
-    { id: "temas",    label: "Temas" },
+    { id: "pipeline",  label: "Pipeline" },
+    { id: "metricas",  label: "Métricas" },
+    { id: "logs",      label: `Logs (${logs.length})` },
+    { id: "temas",     label: "Temas" },
     { id: "evolucion", label: "Evolución" },
   ];
 
@@ -370,7 +515,6 @@ export default function Dashboard() {
       `}</style>
 
       <div style={{ minHeight: "100vh", background: "#050505" }}>
-
         {/* Header */}
         <div style={{ borderBottom: "1px solid #111", padding: "14px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080808", position: "sticky", top: 0, zIndex: 100 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
@@ -392,7 +536,6 @@ export default function Dashboard() {
         </div>
 
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
-
           {/* Stats */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 36, animation: "fadeIn 0.4s ease" }}>
             <StatCard label="Total videos" value={videos.length}   accent="#6b7280" sublabel="generados" />
@@ -428,12 +571,12 @@ export default function Dashboard() {
           {activeTab === "logs" && (
             <div style={{ animation: "fadeIn 0.3s ease" }}>
               {logs.length === 0
-                ? <div style={{ textAlign: "center", padding: "60px 0", color: "#374151", fontSize: 13 }}>Sin logs todavía — aparecerán cuando el pipeline ejecute</div>
+                ? <div style={{ textAlign: "center", padding: "60px 0", color: "#374151", fontSize: 13 }}>Sin logs todavía</div>
                 : (
                   <div style={{ background: "#080808", borderRadius: 12, border: "1px solid #111", overflow: "hidden" }}>
                     {logs.map((log, i) => (
                       <div key={log.id || i} style={{ padding: "12px 20px", borderBottom: "1px solid #0f0f0f", display: "flex", gap: 16, alignItems: "flex-start" }}>
-                        <span style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", color: log.nivel === "error" ? "#ef4444" : log.nivel === "warning" ? "#f59e0b" : "#22c55e", background: log.nivel === "error" ? "#ef444415" : log.nivel === "warning" ? "#f59e0b15" : "#22c55e15", padding: "2px 8px", borderRadius: 4, flexShrink: 0 }}>
+                        <span style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", color: log.nivel === "error" ? "#ef4444" : "#22c55e", background: log.nivel === "error" ? "#ef444415" : "#22c55e15", padding: "2px 8px", borderRadius: 4, flexShrink: 0 }}>
                           {(log.nivel || "info").toUpperCase()}
                         </span>
                         <span style={{ fontSize: 13, color: "#9ca3af", flex: 1 }}>{log.mensaje || "—"}</span>
@@ -449,9 +592,7 @@ export default function Dashboard() {
           )}
 
           {activeTab === "temas" && <TemaSection canales={canales} />}
-
           {activeTab === "evolucion" && <EvolucionSection canales={canales} />}
-
         </div>
 
         {/* Footer */}
@@ -464,7 +605,6 @@ export default function Dashboard() {
           </div>
           <span style={{ fontSize: 11, color: "#1f2937", fontFamily: "'Space Mono', monospace" }}>youtube-autopublish · Lima, Perú</span>
         </div>
-
       </div>
     </>
   );
