@@ -900,6 +900,8 @@ export default function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [activeTab, setActiveTab]   = useState("pipeline");
 
+  const [syncing, setSyncing] = useState(false);
+
   const fetchData = useCallback(async () => {
     try {
       const [c, v, t] = await Promise.all([
@@ -915,7 +917,25 @@ export default function Dashboard() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchData(); const t = setInterval(fetchData, 30000); return () => clearInterval(t); }, [fetchData]);
+  const syncYoutube = useCallback(async () => {
+    setSyncing(true);
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/sync-youtube-metrics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      await fetchData();
+    } catch (e) { console.error(e); }
+    finally { setSyncing(false); }
+  }, [fetchData]);
+
+  useEffect(() => {
+    fetchData();
+    syncYoutube();
+    const t1 = setInterval(fetchData, 30000);
+    const t2 = setInterval(syncYoutube, 15 * 60 * 1000);
+    return () => { clearInterval(t1); clearInterval(t2); };
+  }, [fetchData, syncYoutube]);
 
   const videosPublicados = videos.filter(v => v.estado === "publicado").length;
   const temasLibres = temas.filter(t => !t.usado).length;
@@ -986,7 +1006,7 @@ export default function Dashboard() {
             </div>
             <span style={{ fontSize: 12, color: "#4b5563" }}>3 videos/día</span>
             {lastUpdate && <span style={{ fontSize: 11, color: "#374151", fontFamily: "'Space Mono', monospace" }}>{lastUpdate.toLocaleTimeString("es-PE")}</span>}
-            <button onClick={fetchData} style={{ background: "transparent", border: "1px solid #1f2937", borderRadius: 8, padding: "6px 14px", color: "#6b7280", cursor: "pointer", fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>↻ Actualizar</button>
+            <button onClick={syncYoutube} disabled={syncing} style={{ background: syncing ? "#1f2937" : "transparent", border: "1px solid #1f2937", borderRadius: 8, padding: "6px 14px", color: syncing ? "#38d9a9" : "#6b7280", cursor: syncing ? "default" : "pointer", fontSize: 12, fontFamily: "'DM Sans', sans-serif", transition: "all 0.2s" }}>{syncing ? "⟳ Sincronizando..." : "↻ Actualizar"}</button>
           </div>
         </div>
 
@@ -1016,3 +1036,5 @@ export default function Dashboard() {
 // build: 1776102867
 
 // build: 1776107019
+
+// build: 1776107562
