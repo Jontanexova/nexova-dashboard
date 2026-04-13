@@ -666,6 +666,231 @@ function EvolucionSection({ canales, videos }) {
   );
 }
 
+
+// ===== PESTAÑA CRECIMIENTO =====
+const PLATAFORMAS_CRECIMIENTO = [
+  { id: "youtube",   label: "YouTube",   activo: true,  color: "#e53e3e", icon: "▶" },
+  { id: "tiktok",    label: "TikTok",    activo: false, color: "#a78bfa", icon: "♪" },
+  { id: "instagram", label: "Instagram", activo: false, color: "#f59e0b", icon: "◉" },
+  { id: "facebook",  label: "Facebook",  activo: false, color: "#38d9a9", icon: "f" },
+];
+
+function CrecimientoSection({ canales }) {
+  const [plataforma, setPlataforma] = useState("youtube");
+  const [metrica, setMetrica] = useState("likes");
+  const [canalFiltro, setCanalFiltro] = useState("todos");
+  const [metricas, setMetricas] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabaseQuery("metricas_youtube", "?order=fecha_consulta.asc&limit=500")
+      .then(d => { setMetricas(Array.isArray(d) ? d : []); setLoading(false); });
+  }, []);
+
+  const METRICAS_OPCIONES = [
+    { key: "likes",               label: "Likes",        color: "#f59e0b" },
+    { key: "suscriptores_ganados", label: "Suscriptores", color: "#38d9a9" },
+    { key: "vistas",              label: "Vistas",       color: "#a78bfa" },
+    { key: "comentarios",         label: "Comentarios",  color: "#e53e3e" },
+  ];
+
+  const canalesFiltrados = canalFiltro === "todos" ? canales : canales.filter(c => c.id === canalFiltro);
+
+  // Construir datos del gráfico por canal
+  const buildChartData = (canal) => {
+    const cm = metricas.filter(m => m.canal_id === canal.id);
+    if (cm.length === 0) {
+      // Datos de ejemplo para mostrar el gráfico vacío
+      const hoy = new Date();
+      return Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(hoy); d.setDate(d.getDate() - (6 - i));
+        return { fecha: d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" }), valor: 0 };
+      });
+    }
+    return cm.map(m => ({
+      fecha: new Date(m.fecha_consulta).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }),
+      valor: Number(m[metrica]) || 0,
+    }));
+  };
+
+  // Totales por canal
+  const getTotales = (canal) => {
+    const cm = metricas.filter(m => m.canal_id === canal.id);
+    return {
+      likes: cm.reduce((s, m) => s + (m.likes || 0), 0),
+      suscriptores: cm.reduce((s, m) => s + (m.suscriptores_ganados || 0), 0),
+      vistas: cm.reduce((s, m) => s + (m.vistas || 0), 0),
+      comentarios: cm.reduce((s, m) => s + (m.comentarios || 0), 0),
+      ultFecha: cm.length ? new Date(cm[cm.length-1].fecha_consulta).toLocaleDateString("es-PE") : "—",
+    };
+  };
+
+  const mConfig = METRICAS_OPCIONES.find(m => m.key === metrica);
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      {/* Selector plataforma */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+        {PLATAFORMAS_CRECIMIENTO.map(p => (
+          <button key={p.id} onClick={() => p.activo && setPlataforma(p.id)} style={{
+            background: plataforma === p.id ? `${p.color}20` : "transparent",
+            border: `1px solid ${plataforma === p.id ? p.color : "#1f2937"}`,
+            borderRadius: 10, padding: "10px 20px", cursor: p.activo ? "pointer" : "not-allowed",
+            color: plataforma === p.id ? p.color : p.activo ? "#4b5563" : "#1f2937",
+            fontSize: 13, fontFamily: "'DM Sans', sans-serif",
+            display: "flex", alignItems: "center", gap: 8, opacity: p.activo ? 1 : 0.35,
+            transition: "all 0.2s",
+          }}>
+            <span style={{ fontSize: 16 }}>{p.icon}</span>
+            <span style={{ fontWeight: plataforma === p.id ? 600 : 400 }}>{p.label}</span>
+            {!p.activo && <span style={{ fontSize: 10, color: "#374151", background: "#111", borderRadius: 4, padding: "1px 5px" }}>Próximamente</span>}
+            {p.activo && <span style={{ fontSize: 9, background: "#22c55e20", color: "#22c55e", border: "1px solid #22c55e30", borderRadius: 8, padding: "1px 6px" }}>Activo</span>}
+          </button>
+        ))}
+      </div>
+
+      {plataforma === "youtube" && (
+        <>
+          {/* Controles */}
+          <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap", alignItems: "center" }}>
+            {/* Selector canal */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button onClick={() => setCanalFiltro("todos")} style={{
+                background: canalFiltro === "todos" ? "#1f2937" : "transparent",
+                border: `1px solid ${canalFiltro === "todos" ? "#6b7280" : "#1f2937"}`,
+                borderRadius: 20, padding: "6px 16px", cursor: "pointer",
+                color: canalFiltro === "todos" ? "#e5e7eb" : "#4b5563", fontSize: 12, fontFamily: "'DM Sans', sans-serif",
+              }}>Todos los canales</button>
+              {canales.map(c => {
+                const col = CANAL_COLORS[c.nicho]?.accent || "#6b7280";
+                return (
+                  <button key={c.id} onClick={() => setCanalFiltro(c.id)} style={{
+                    background: canalFiltro === c.id ? `${col}20` : "transparent",
+                    border: `1px solid ${canalFiltro === c.id ? col : "#1f2937"}`,
+                    borderRadius: 20, padding: "6px 16px", cursor: "pointer",
+                    color: canalFiltro === c.id ? col : "#4b5563", fontSize: 12, fontFamily: "'DM Sans', sans-serif",
+                  }}>{c.nombre}</button>
+                );
+              })}
+            </div>
+
+            {/* Selector métrica */}
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+              {METRICAS_OPCIONES.map(m => (
+                <button key={m.key} onClick={() => setMetrica(m.key)} style={{
+                  background: metrica === m.key ? `${m.color}20` : "transparent",
+                  border: `1px solid ${metrica === m.key ? m.color : "#1f2937"}`,
+                  borderRadius: 20, padding: "6px 14px", cursor: "pointer",
+                  color: metrica === m.key ? m.color : "#4b5563", fontSize: 12, fontFamily: "'DM Sans', sans-serif",
+                  transition: "all 0.2s",
+                }}>{m.label}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Gráficos por canal */}
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "60px 0", color: "#374151", fontSize: 13 }}>Cargando métricas...</div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: canalesFiltrados.length === 1 ? "1fr" : "repeat(auto-fit, minmax(400px, 1fr))", gap: 20 }}>
+              {canalesFiltrados.map(canal => {
+                const col = CANAL_COLORS[canal.nicho]?.accent || "#6b7280";
+                const chartData = buildChartData(canal);
+                const totales = getTotales(canal);
+                const valorActual = totales[metrica === "suscriptores_ganados" ? "suscriptores" : metrica] || 0;
+
+                return (
+                  <div key={canal.id} style={{ background: "#080808", border: `1px solid ${col}25`, borderRadius: 16, padding: 20 }}>
+                    {/* Header canal */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: col, boxShadow: `0 0 6px ${col}` }} />
+                          <span style={{ fontSize: 15, fontWeight: 700, color: col, fontFamily: "'Space Mono', monospace" }}>{canal.nombre}</span>
+                        </div>
+                        <span style={{ fontSize: 11, color: "#374151" }}>Última actualización: {totales.ultFecha}</span>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 28, fontWeight: 700, color: mConfig?.color, fontFamily: "'Space Mono', monospace" }}>
+                          {valorActual.toLocaleString("es-PE")}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#4b5563" }}>{mConfig?.label} acumulados</div>
+                      </div>
+                    </div>
+
+                    {/* Gráfico de línea */}
+                    <ResponsiveContainer width="100%" height={200}>
+                      <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                        <defs>
+                          <linearGradient id={`grad-${canal.id}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={mConfig?.color} stopOpacity={0.2} />
+                            <stop offset="95%" stopColor={mConfig?.color} stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#111" />
+                        <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: "#4b5563" }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: "#4b5563" }} axisLine={false} tickLine={false} />
+                        <Tooltip
+                          contentStyle={{ background: "#0f0f0f", border: "1px solid #1f2937", borderRadius: 8, fontSize: 12 }}
+                          labelStyle={{ color: "#6b7280", marginBottom: 4 }}
+                          itemStyle={{ color: mConfig?.color, fontFamily: "'Space Mono', monospace" }}
+                          formatter={(v) => [v.toLocaleString("es-PE"), mConfig?.label]}
+                        />
+                        <Line
+                          type="monotone" dataKey="valor" name={mConfig?.label}
+                          stroke={mConfig?.color} strokeWidth={2.5}
+                          dot={{ fill: mConfig?.color, r: 3, strokeWidth: 0 }}
+                          activeDot={{ r: 5, fill: mConfig?.color, strokeWidth: 0 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+
+                    {/* Mini stats del canal */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginTop: 16 }}>
+                      {[
+                        { label: "Likes", value: totales.likes, color: "#f59e0b" },
+                        { label: "Suscript.", value: totales.suscriptores, color: "#38d9a9" },
+                        { label: "Vistas", value: totales.vistas, color: "#a78bfa" },
+                        { label: "Coment.", value: totales.comentarios, color: "#e53e3e" },
+                      ].map(s => (
+                        <div key={s.label} style={{ background: "#0f0f0f", borderRadius: 8, padding: "8px 10px", textAlign: "center", border: `1px solid ${s.color}15` }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: s.color, fontFamily: "'Space Mono', monospace" }}>
+                            {s.value >= 1000 ? (s.value/1000).toFixed(1)+"K" : s.value}
+                          </div>
+                          <div style={{ fontSize: 10, color: "#374151", marginTop: 2 }}>{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {metricas.length === 0 && !loading && (
+            <div style={{ marginTop: 16, padding: "12px 16px", background: "#080808", borderRadius: 10, border: "1px solid #111", fontSize: 12, color: "#374151" }}>
+              💡 Las métricas de crecimiento se registrarán automáticamente cada vez que el pipeline publique un video. Los gráficos mostrarán la evolución en el tiempo.
+            </div>
+          )}
+        </>
+      )}
+
+      {plataforma !== "youtube" && (
+        <div style={{ textAlign: "center", padding: "80px 20px", background: "#080808", borderRadius: 14, border: "1px solid #111" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>{PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.icon}</div>
+          <div style={{ fontSize: 16, color: "#4b5563", marginBottom: 8, fontWeight: 600 }}>
+            {PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.label} — Próximamente
+          </div>
+          <div style={{ fontSize: 13, color: "#374151", maxWidth: 400, margin: "0 auto" }}>
+            La integración con esta plataforma está en desarrollo. Cuando esté lista, verás aquí la evolución de likes y seguidores en el tiempo.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// ===== FIN CRECIMIENTO =====
+
 // ===== MAIN APP =====
 export default function Dashboard() {
   const [canales, setCanales] = useState([]);
@@ -703,6 +928,7 @@ export default function Dashboard() {
     { id: "canales",    label: "Canales",          badge: canales.length, badgeColor: null },
     { id: "temas",      label: "Temas",            badge: `${temasLibres} libres`, badgeColor: "#a78bfa" },
     { id: "evolucion",  label: "Evolución",        badge: null },
+    { id: "crecimiento", label: "Crecimiento",      badge: null },
   ];
 
   return (
@@ -772,6 +998,7 @@ export default function Dashboard() {
           {activeTab === "canales"   && <CanalesSection canales={canales} videos={videos} temas={temas} />}
           {activeTab === "temas"     && <TemaSection canales={canales} temas={temas} loading={loading} />}
           {activeTab === "evolucion" && <EvolucionSection canales={canales} videos={videos} />}
+          {activeTab === "crecimiento" && <CrecimientoSection canales={canales} />}
         </div>
 
         <div style={{ borderTop: "1px solid #0f0f0f", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080808" }}>
@@ -787,3 +1014,5 @@ export default function Dashboard() {
 }
 
 // build: 1776102867
+
+// build: 1776107019
