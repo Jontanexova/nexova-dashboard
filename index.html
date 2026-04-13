@@ -6,458 +6,595 @@
 <title>NEXOVA — AutoPublish Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0a0c0f;--surface:#111418;--border:#1e2328;--border2:#252b33;--teal:#00d4a8;--teal-dim:#00d4a820;--teal-low:#00d4a810;--amber:#f5a623;--amber-dim:#f5a62320;--red:#ff4d6a;--red-dim:#ff4d6a20;--blue:#4d9fff;--blue-dim:#4d9fff20;--text:#e8edf2;--text2:#8a9ab0;--text3:#4a5568;--font-mono:'Space Mono',monospace;--font-sans:'DM Sans',sans-serif}
+:root{--bg:#0a0c0f;--sf:#111418;--bd:#1e2328;--bd2:#252b33;--teal:#00d4a8;--tdim:#00d4a820;--tlow:#00d4a810;--amb:#f5a623;--adim:#f5a62320;--red:#ff4d6a;--rdim:#ff4d6a20;--blu:#4d9fff;--bdim:#4d9fff20;--tx:#e8edf2;--tx2:#8a9ab0;--tx3:#4a5568;--mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-height:100vh;overflow-x:hidden}
-::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-header{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;border-bottom:1px solid var(--border);background:#0d1015ee;backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
-.logo{display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:.1em}
+body{background:var(--bg);color:var(--tx);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px}
+header{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;border-bottom:1px solid var(--bd);background:#0d1015ee;backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.1em}
 .logo-icon{width:26px;height:26px;background:var(--teal);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000}
-.hdr-mid{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);font-family:var(--font-mono)}
+.hm{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx2);font-family:var(--mono)}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.hdr-right{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text3);font-family:var(--font-mono)}
-.refresh-btn{background:none;border:1px solid var(--border2);color:var(--text2);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-family:var(--font-mono);transition:all .2s}
-.refresh-btn:hover{border-color:var(--teal);color:var(--teal)}
-.tabs{display:flex;padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:52px;z-index:99}
-.tab-btn{background:none;border:none;color:var(--text3);padding:11px 18px;cursor:pointer;font-size:13px;font-family:var(--font-sans);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .2s}
-.tab-btn:hover{color:var(--text2)}.tab-btn.active{color:var(--teal);border-bottom-color:var(--teal)}
-.tc{display:inline-block;background:var(--teal-dim);color:var(--teal);border-radius:10px;padding:1px 6px;font-size:10px;margin-left:5px;font-family:var(--font-mono)}
+.hr{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--tx3);font-family:var(--mono)}
+.rbtn{background:none;border:1px solid var(--bd2);color:var(--tx2);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-family:var(--mono);transition:all .2s}
+.rbtn:hover{border-color:var(--teal);color:var(--teal)}
+.tabs{display:flex;padding:0 24px;border-bottom:1px solid var(--bd);background:var(--bg);position:sticky;top:52px;z-index:99}
+.tab{background:none;border:none;color:var(--tx3);padding:11px 18px;cursor:pointer;font-size:13px;font-family:var(--sans);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .2s}
+.tab:hover{color:var(--tx2)}.tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.tc{display:inline-block;background:var(--tdim);color:var(--teal);border-radius:10px;padding:1px 6px;font-size:10px;margin-left:5px;font-family:var(--mono)}
+.tc.warn{background:var(--adim);color:var(--amb)}
+.tc.crit{background:var(--rdim);color:var(--red)}
 main{padding:20px 24px;max-width:1600px;margin:0 auto}
-.tab-panel{display:none}.tab-panel.active{display:block}
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
-.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;position:relative;overflow:hidden}
+.panel{display:none}.panel.active{display:block}
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:18px;position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--ac,#00d4a840),transparent)}
-.kpi-lbl{font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
-.kpi-val{font-size:38px;font-family:var(--font-mono);font-weight:700;line-height:1;margin-bottom:4px}
-.kpi-sub{font-size:11px;color:var(--text3)}
-.kpi.blue{--ac:#4d9fff40}.kpi.blue .kpi-val{color:var(--blue)}
-.kpi.green{--ac:#00d4a840}.kpi.green .kpi-val{color:var(--teal)}
-.kpi.amber{--ac:#f5a62340}.kpi.amber .kpi-val{color:var(--amber)}
-.kpi.red{--ac:#ff4d6a40}.kpi.red .kpi-val{color:var(--red)}
-.sec{font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:10px}
-.sec::after{content:'';flex:1;height:1px;background:var(--border)}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.vt-hdr{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 1fr;padding:9px 16px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.05em}
-.vt-row{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 1fr;padding:11px 16px;border-bottom:1px solid var(--border);font-size:13px;align-items:center;transition:background .15s}
-.vt-row:hover{background:#ffffff05}.vt-row:last-child{border-bottom:none}
-.vt-title{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-family:var(--font-mono);font-weight:700}
-.bt{background:var(--teal-dim);color:var(--teal)}.ba{background:var(--amber-dim);color:var(--amber)}.br{background:var(--red-dim);color:var(--red)}.bb{background:var(--blue-dim);color:var(--blue)}.bg{background:#ffffff10;color:var(--text2)}
-.yt-link{color:var(--teal);text-decoration:none;font-family:var(--font-mono);font-size:10px;display:flex;align-items:center;gap:3px}
-.yt-link:hover{text-decoration:underline}
+.kl{font-size:10px;color:var(--tx3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.kv{font-size:38px;font-family:var(--mono);font-weight:700;line-height:1;margin-bottom:4px}
+.ks{font-size:11px;color:var(--tx3)}
+.kpi.blue{--ac:#4d9fff40}.kpi.blue .kv{color:var(--blu)}
+.kpi.green{--ac:#00d4a840}.kpi.green .kv{color:var(--teal)}
+.kpi.amber{--ac:#f5a62340}.kpi.amber .kv{color:var(--amb)}
+.kpi.red{--ac:#ff4d6a40}.kpi.red .kv{color:var(--red)}
+.sec{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.sec::after{content:'';flex:1;height:1px;background:var(--bd)}
+/* FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.filter-select{background:var(--sf);border:1px solid var(--bd2);color:var(--tx);padding:6px 12px;border-radius:7px;font-size:12px;font-family:var(--sans);cursor:pointer;outline:none;transition:border-color .2s}
+.filter-select:hover,.filter-select:focus{border-color:var(--teal)}
+.filter-label{font-size:11px;color:var(--tx3);font-family:var(--mono)}
+.filter-count{font-size:11px;color:var(--tx2);font-family:var(--mono);margin-left:auto}
+/* VIDEO TABLE */
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;overflow:hidden}
+.vhdr{display:grid;grid-template-columns:2fr 1.1fr .9fr 1fr 1fr 1fr;padding:9px 16px;border-bottom:1px solid var(--bd);font-size:10px;color:var(--tx3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em}
+.vrow{display:grid;grid-template-columns:2fr 1.1fr .9fr 1fr 1fr 1fr;padding:11px 16px;border-bottom:1px solid var(--bd);font-size:12px;align-items:center;transition:background .15s}
+.vrow:hover{background:#ffffff05}.vrow:last-child{border-bottom:none}
+.vtit{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:10px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-family:var(--mono);font-weight:700;white-space:nowrap}
+.bt{background:var(--tdim);color:var(--teal)}.ba{background:var(--adim);color:var(--amb)}.br{background:var(--rdim);color:var(--red)}.bb{background:var(--bdim);color:var(--blu)}.bg{background:#ffffff10;color:var(--tx2)}
+.ytl{color:var(--teal);text-decoration:none;font-family:var(--mono);font-size:10px}
+.ytl:hover{text-decoration:underline}
+/* API CREDITS */
+.credits-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:20px}
+.cred-card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;position:relative;transition:border-color .2s}
+.cred-card:hover{border-color:var(--bd2)}
+.cred-card.warn{border-color:#f5a62360}
+.cred-card.crit{border-color:#ff4d6a60}
+.cred-hdr{display:flex;align-items:center;justify-content:space-between}
+.cred-name{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px}
+.cred-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.cred-actions{display:flex;align-items:center;gap:6px}
+/* ALERT BADGE */
+.alert-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10px;font-family:var(--mono);font-weight:700;cursor:help;position:relative}
+.alert-badge.warn{background:var(--adim);color:var(--amb)}
+.alert-badge.crit{background:var(--rdim);color:var(--red);animation:blink .8s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.6}}
+/* TOOLTIP */
+.tooltip{position:relative}
+.tooltip .tip{position:absolute;bottom:calc(100%+6px);right:0;background:#1a1f27;border:1px solid var(--bd2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--tx);white-space:nowrap;z-index:200;opacity:0;pointer-events:none;transition:opacity .15s;min-width:180px;max-width:260px;white-space:normal;line-height:1.5}
+.tooltip:hover .tip{opacity:1}
+.tip::after{content:'';position:absolute;top:100%;right:10px;border:5px solid transparent;border-top-color:#1a1f27}
+/* PROGRESS */
+.pb{height:4px;background:var(--bd2);border-radius:2px;overflow:hidden;margin-top:4px}
+.pf{height:100%;border-radius:2px;transition:width .5s ease}
+/* EDIT BALANCE */
+.edit-row{display:flex;align-items:center;gap:8px}
+.edit-input{background:var(--bg);border:1px solid var(--bd2);color:var(--tx);padding:4px 8px;border-radius:5px;font-size:13px;font-family:var(--mono);width:120px;outline:none}
+.edit-input:focus{border-color:var(--teal)}
+.save-btn{background:var(--teal);color:#000;border:none;padding:4px 10px;border-radius:5px;font-size:11px;font-family:var(--mono);cursor:pointer;font-weight:700;transition:opacity .2s}
+.save-btn:hover{opacity:.8}
+/* LINK BTN */
+.lbtn{display:flex;align-items:center;gap:4px;background:none;border:1px solid var(--bd2);color:var(--tx2);padding:4px 9px;border-radius:7px;cursor:pointer;font-size:10px;font-family:var(--mono);text-decoration:none;transition:all .2s}
+.lbtn:hover{border-color:var(--teal);color:var(--teal)}
+/* DB */
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-.api-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px}
-.api-hdr{display:flex;align-items:center;justify-content:space-between}
-.api-name{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px}
-.api-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
-.api-btn{display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--border2);color:var(--text2);padding:4px 10px;border-radius:7px;cursor:pointer;font-size:10px;font-family:var(--font-mono);text-decoration:none;transition:all .2s}
-.api-btn:hover{border-color:var(--teal);color:var(--teal)}
-.api-lbl{font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em}
-.api-val{font-size:26px;font-family:var(--font-mono);font-weight:700;margin-top:2px}
-.api-sub{font-size:11px;color:var(--text3)}
-.pb{height:4px;background:var(--border2);border-radius:2px;overflow:hidden;margin-top:4px}
-.pf{height:100%;border-radius:2px;transition:width .5s ease}
-.info-box{background:#ffffff08;border-radius:7px;padding:9px;font-size:11px;color:var(--text2)}
-.db-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px}
-.db-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
-.db-row:last-child{border-bottom:none}
-.db-lbl{font-size:12px;color:var(--text2)}.db-val{font-family:var(--font-mono);font-size:13px;font-weight:700}
-.canal-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px}
-.c-nicho{font-size:10px;font-family:var(--font-mono);color:var(--teal);background:var(--teal-dim);padding:2px 7px;border-radius:4px;display:inline-block;margin-top:3px}
-.c-stats{display:flex;gap:12px}
-.c-stat{flex:1;background:#ffffff05;border-radius:7px;padding:9px;text-align:center}
-.c-val{font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--teal)}
-.c-lbl{font-size:10px;color:var(--text3);margin-top:2px}
-.sk{background:linear-gradient(90deg,var(--border),var(--border2),var(--border));background-size:200% 100%;animation:sh 1.5s infinite;border-radius:4px}
+.dbcard{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:18px}
+.dbrow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd)}
+.dbrow:last-child{border-bottom:none}
+.dbl{font-size:12px;color:var(--tx2)}.dbv{font-family:var(--mono);font-size:13px;font-weight:700}
+/* CANAL CARDS */
+.cc{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.cnicho{font-size:10px;font-family:var(--mono);color:var(--teal);background:var(--tdim);padding:2px 7px;border-radius:4px;display:inline-block;margin-top:3px}
+.cstats{display:flex;gap:10px}
+.cst{flex:1;background:#ffffff05;border-radius:7px;padding:8px;text-align:center}
+.csv{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--teal)}
+.csl{font-size:10px;color:var(--tx3);margin-top:2px}
+.sk{background:linear-gradient(90deg,var(--bd),var(--bd2),var(--bd));background-size:200% 100%;animation:sh 1.5s infinite;border-radius:4px}
 @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.topic-list{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.topic-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px}
-.topic-row:last-child{border-bottom:none}.topic-row.used{opacity:.4}
-.empty{text-align:center;padding:40px 24px;color:var(--text3)}
+.tlist{background:var(--sf);border:1px solid var(--bd);border-radius:10px;overflow:hidden}
+.trow{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--bd);font-size:12px}
+.trow:last-child{border-bottom:none}.trow.used{opacity:.4}
+.empty{text-align:center;padding:40px 24px;color:var(--tx3)}
 .empty .ico{font-size:40px;margin-bottom:10px}
+/* COST TABLE */
+.cost-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo"><div class="logo-icon">N</div>NEXOVA<span style="color:var(--text3);font-weight:400;margin-left:4px">/ AUTOPUBLISH</span></div>
-  <div class="hdr-mid"><span class="dot"></span><span id="hdr-canales">— canales</span><span style="color:var(--border2)">·</span><span id="hdr-rate">— videos/día</span></div>
-  <div class="hdr-right"><span id="clock"></span><button class="refresh-btn" onclick="loadAll()">↻ Actualizar</button></div>
+  <div class="logo"><div class="logo-icon">N</div>NEXOVA<span style="color:var(--tx3);font-weight:400;margin-left:4px">/ AUTOPUBLISH</span></div>
+  <div class="hm"><span class="dot"></span><span id="hdr-c">— canales</span><span style="color:var(--bd2)">·</span><span id="hdr-r">— videos/día</span></div>
+  <div class="hr"><span id="clock"></span><button class="rbtn" onclick="loadAll()">↻ Actualizar</button></div>
 </header>
 
 <div class="tabs">
-  <button class="tab-btn active" onclick="showTab('pipeline',this)">Pipeline<span class="tc" id="tc-pipeline">0</span></button>
-  <button class="tab-btn" onclick="showTab('apis',this)">APIs & Créditos</button>
-  <button class="tab-btn" onclick="showTab('db',this)">Base de Datos</button>
-  <button class="tab-btn" onclick="showTab('canales',this)">Canales<span class="tc" id="tc-canales">0</span></button>
-  <button class="tab-btn" onclick="showTab('temas',this)">Temas<span class="tc" id="tc-temas">0</span></button>
+  <button class="tab active" onclick="showTab('pipeline',this)">Pipeline<span class="tc" id="tc-p">0</span></button>
+  <button class="tab" onclick="showTab('apis',this)">APIs & Créditos<span class="tc" id="tc-api">OK</span></button>
+  <button class="tab" onclick="showTab('db',this)">Base de Datos</button>
+  <button class="tab" onclick="showTab('canales',this)">Canales<span class="tc" id="tc-c">0</span></button>
+  <button class="tab" onclick="showTab('temas',this)">Temas<span class="tc" id="tc-t">0</span></button>
 </div>
 
 <main>
 
-<!-- PIPELINE -->
-<div class="tab-panel active" id="panel-pipeline">
-  <div class="kpi-grid">
-    <div class="kpi blue"><div class="kpi-lbl">Total Videos</div><div class="kpi-val" id="k-total">—</div><div class="kpi-sub">generados</div></div>
-    <div class="kpi green"><div class="kpi-lbl">Publicados</div><div class="kpi-val" id="k-pub">—</div><div class="kpi-sub">en YouTube</div></div>
-    <div class="kpi amber"><div class="kpi-lbl">En Proceso</div><div class="kpi-val" id="k-proc">—</div><div class="kpi-sub">ahora mismo</div></div>
-    <div class="kpi red"><div class="kpi-lbl">Errores</div><div class="kpi-val" id="k-err">—</div><div class="kpi-sub">requieren atención</div></div>
+<!-- ══ PIPELINE ══ -->
+<div class="panel active" id="panel-pipeline">
+  <div class="kgrid">
+    <div class="kpi blue"><div class="kl">Total Videos</div><div class="kv" id="k-tot">—</div><div class="ks">generados</div></div>
+    <div class="kpi green"><div class="kl">Publicados</div><div class="kv" id="k-pub">—</div><div class="ks">en YouTube</div></div>
+    <div class="kpi amber"><div class="kl">En Proceso</div><div class="kv" id="k-proc">—</div><div class="ks">ahora mismo</div></div>
+    <div class="kpi red"><div class="kl">Errores</div><div class="kv" id="k-err">—</div><div class="ks">requieren atención</div></div>
   </div>
+
+  <!-- FILTER -->
+  <div class="filter-bar">
+    <span class="filter-label">FILTRAR POR CANAL:</span>
+    <select class="filter-select" id="canal-filter" onchange="applyFilter()">
+      <option value="">Todos los canales</option>
+    </select>
+    <span class="filter-count" id="filter-count"></span>
+  </div>
+
   <div class="sec">Videos Recientes</div>
   <div class="card">
-    <div class="vt-hdr"><span>Título</span><span>Canal</span><span>Estado</span><span>Fecha</span><span>YouTube</span><span>Tema</span></div>
+    <div class="vhdr"><span>Título</span><span>Canal</span><span>Estado</span><span>Fecha</span><span>YouTube</span><span>Tema</span></div>
     <div id="vt-body"><div class="empty"><div class="ico">⏳</div><p>Cargando...</p></div></div>
   </div>
 </div>
 
-<!-- APIS -->
-<div class="tab-panel" id="panel-apis">
-  <div class="sec" style="margin-bottom:14px">Plataformas de IA</div>
-  <div class="two-col" style="margin-bottom:14px">
-    <!-- fal.ai -->
-    <div class="api-card">
-      <div class="api-hdr">
-        <div class="api-name"><div class="api-icon" style="background:#7c3aed20;color:#a78bfa;font-size:10px">fal</div>fal.ai</div>
-        <a class="api-btn" href="https://fal.ai/dashboard" target="_blank">↗ Ver saldo</a>
-      </div>
-      <div><div class="api-lbl">Saldo disponible</div><div class="api-val" id="fal-val" style="color:#a78bfa">—</div><div class="api-sub" id="fal-sub">Video AI · wan-t2v · $0.20–$0.40/clip</div></div>
-      <div><div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:10px;color:var(--text3)"><span>Créditos usados</span><span id="fal-pct">—</span></div><div class="pb"><div class="pf" id="fal-bar" style="width:0%;background:#a78bfa"></div></div></div>
-    </div>
-    <!-- ElevenLabs -->
-    <div class="api-card">
-      <div class="api-hdr">
-        <div class="api-name"><div class="api-icon" style="background:#f59e0b20;color:#f59e0b;font-size:10px">11L</div>ElevenLabs</div>
-        <a class="api-btn" href="https://elevenlabs.io/subscription" target="_blank">↗ Renovar</a>
-      </div>
-      <div><div class="api-lbl">Caracteres restantes</div><div class="api-val" id="el-val" style="color:#f59e0b">—</div><div class="api-sub" id="el-sub">TTS Multilingual v2</div></div>
-      <div><div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:10px;color:var(--text3)"><span>Uso del plan</span><span id="el-pct">—</span></div><div class="pb"><div class="pf" id="el-bar" style="width:0%;background:#f59e0b"></div></div></div>
-    </div>
+<!-- ══ APIS & CRÉDITOS ══ -->
+<div class="panel" id="panel-apis">
+  <div class="sec" style="margin-bottom:14px">Estado de Créditos <span style="color:var(--tx3);font-weight:400;font-size:10px">— Click en el saldo para editar manualmente</span></div>
+  <div class="credits-grid" id="credits-grid">
+    <div class="cred-card"><div class="sk" style="height:16px;width:50%;margin-bottom:8px"></div><div class="sk" style="height:30px;width:40%"></div></div>
+    <div class="cred-card"><div class="sk" style="height:16px;width:50%;margin-bottom:8px"></div><div class="sk" style="height:30px;width:40%"></div></div>
+    <div class="cred-card"><div class="sk" style="height:16px;width:50%;margin-bottom:8px"></div><div class="sk" style="height:30px;width:40%"></div></div>
   </div>
 
-  <div class="sec" style="margin-bottom:14px">Infraestructura</div>
-  <div class="three-col" style="margin-bottom:14px">
-    <!-- Railway -->
-    <div class="api-card">
-      <div class="api-hdr">
-        <div class="api-name"><div class="api-icon" style="background:#8b5cf620;color:#8b5cf6;font-size:9px">RW</div>Railway</div>
-        <a class="api-btn" href="https://railway.com/project/aeee77b4-f455-4891-8fa9-e22b28ff8b62" target="_blank">↗ Dashboard</a>
-      </div>
-      <div><div class="api-lbl">Plan</div><div class="api-val" style="font-size:16px;color:#8b5cf6;margin-top:4px">Hobby $5/mes</div><div class="api-sub">n8n self-hosted · 5GB disco</div></div>
-      <div class="info-box">🚂 n8n corre en Railway. El plan Hobby incluye $5 de crédito/mes. Revisar uso en el dashboard.</div>
-    </div>
-    <!-- Anthropic -->
-    <div class="api-card">
-      <div class="api-hdr">
-        <div class="api-name"><div class="api-icon" style="background:#ec489920;color:#ec4899;font-size:9px">ANT</div>Anthropic</div>
-        <a class="api-btn" href="https://console.anthropic.com/billing" target="_blank">↗ Ver saldo</a>
-      </div>
-      <div><div class="api-lbl">Modelo</div><div class="api-val" style="font-size:14px;color:#ec4899;margin-top:4px">claude-opus-4-5</div><div class="api-sub">Generación de scripts</div></div>
-      <div class="info-box">💡 Sin API de balance. Ver saldo en console.anthropic.com/billing</div>
-    </div>
-    <!-- Creatomate -->
-    <div class="api-card">
-      <div class="api-hdr">
-        <div class="api-name"><div class="api-icon" style="background:#00d4a820;color:#00d4a8;font-size:9px">CRE</div>Creatomate</div>
-        <a class="api-btn" href="https://app.creatomate.com/settings/billing" target="_blank">↗ Ver plan</a>
-      </div>
-      <div><div class="api-lbl">Renders totales (publicados)</div><div class="api-val" id="cre-val" style="color:#00d4a8">—</div><div class="api-sub">3 templates activos · 1280×720</div></div>
-      <div class="info-box">🎬 Plan y créditos disponibles en app.creatomate.com. Click "Ver plan".</div>
-    </div>
-  </div>
-
-  <!-- Estimador -->
   <div class="sec" style="margin-bottom:14px">Estimador de Costos Mensuales</div>
-  <div class="db-card">
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+  <div class="dbcard">
+    <div class="cost-grid">
       <div>
-        <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Por video</div>
-        <div class="db-row"><span class="db-lbl">fal.ai 6 clips 480p</span><span class="db-val" style="color:#a78bfa">$1.20</span></div>
-        <div class="db-row"><span class="db-lbl">ElevenLabs TTS</span><span class="db-val" style="color:#f59e0b">~$0.02</span></div>
-        <div class="db-row"><span class="db-lbl">Anthropic Claude</span><span class="db-val" style="color:#ec4899">~$0.01</span></div>
-        <div class="db-row" style="border-top:1px solid var(--border2)"><span class="db-lbl" style="font-weight:600;color:var(--text)">Total/video</span><span class="db-val" style="color:var(--teal);font-size:16px">~$1.23</span></div>
+        <div style="font-size:10px;color:var(--tx3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Por video</div>
+        <div class="dbrow"><span class="dbl">fal.ai 6 clips 480p</span><span class="dbv" style="color:#a78bfa">$1.20</span></div>
+        <div class="dbrow"><span class="dbl">ElevenLabs TTS</span><span class="dbv" style="color:#f59e0b">~$0.02</span></div>
+        <div class="dbrow"><span class="dbl">Anthropic Claude</span><span class="dbv" style="color:#ec4899">~$0.01</span></div>
+        <div class="dbrow"><span class="dbl" style="font-weight:600;color:var(--tx)">Total/video</span><span class="dbv" style="color:var(--teal);font-size:16px">~$1.23</span></div>
       </div>
       <div>
-        <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Mensual (3 canales/día)</div>
-        <div class="db-row"><span class="db-lbl">Videos/mes</span><span class="db-val">90</span></div>
-        <div class="db-row"><span class="db-lbl">fal.ai</span><span class="db-val" style="color:#a78bfa">~$108</span></div>
-        <div class="db-row"><span class="db-lbl">Railway</span><span class="db-val" style="color:#8b5cf6">$5</span></div>
-        <div class="db-row" style="border-top:1px solid var(--border2)"><span class="db-lbl" style="font-weight:600;color:var(--text)">Total mensual</span><span class="db-val" style="color:var(--teal);font-size:16px">~$116</span></div>
+        <div style="font-size:10px;color:var(--tx3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Mensual (3 canales/día)</div>
+        <div class="dbrow"><span class="dbl">Videos/mes</span><span class="dbv">90</span></div>
+        <div class="dbrow"><span class="dbl">fal.ai</span><span class="dbv" style="color:#a78bfa">~$108</span></div>
+        <div class="dbrow"><span class="dbl">Railway</span><span class="dbv" style="color:#8b5cf6">$5</span></div>
+        <div class="dbrow"><span class="dbl" style="font-weight:600;color:var(--tx)">Total mensual</span><span class="dbv" style="color:var(--teal);font-size:16px">~$116</span></div>
       </div>
       <div>
-        <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Paquetes recomendados</div>
-        <div class="db-row"><span class="db-lbl">fal.ai $50 → ~41 videos</span><a href="https://fal.ai/dashboard" target="_blank" style="color:var(--teal);font-size:10px">Comprar ↗</a></div>
-        <div class="db-row"><span class="db-lbl">ElevenLabs Pro</span><a href="https://elevenlabs.io/subscription" target="_blank" style="color:var(--amber);font-size:10px">Renovar ↗</a></div>
-        <div class="db-row"><span class="db-lbl">Railway Hobby</span><a href="https://railway.com/pricing" target="_blank" style="color:#8b5cf6;font-size:10px">Ver planes ↗</a></div>
-        <div class="db-row"><span class="db-lbl">Creatomate</span><a href="https://app.creatomate.com/settings/billing" target="_blank" style="color:var(--teal);font-size:10px">Ver plan ↗</a></div>
+        <div style="font-size:10px;color:var(--tx3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Renovaciones</div>
+        <div class="dbrow"><span class="dbl">fal.ai $50</span><a href="https://fal.ai/dashboard" target="_blank" style="color:#a78bfa;font-size:10px">Comprar ↗</a></div>
+        <div class="dbrow"><span class="dbl">ElevenLabs</span><a href="https://elevenlabs.io/subscription" target="_blank" style="color:#f59e0b;font-size:10px">Renovar ↗</a></div>
+        <div class="dbrow"><span class="dbl">Railway</span><a href="https://railway.com/pricing" target="_blank" style="color:#8b5cf6;font-size:10px">Ver planes ↗</a></div>
+        <div class="dbrow"><span class="dbl">Creatomate</span><a href="https://app.creatomate.com/settings/billing" target="_blank" style="color:var(--teal);font-size:10px">Ver plan ↗</a></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- BASE DE DATOS -->
-<div class="tab-panel" id="panel-db">
+<!-- ══ BASE DE DATOS ══ -->
+<div class="panel" id="panel-db">
   <div class="three-col" style="margin-bottom:20px">
-    <div class="db-card">
+    <div class="dbcard">
       <div class="sec" style="margin-bottom:10px">Supabase</div>
-      <div class="db-row"><span class="db-lbl">Proyecto</span><span class="db-val" style="font-size:11px">xkdtpzxgtjujcopbcrwy</span></div>
-      <div class="db-row"><span class="db-lbl">Tamaño BD</span><span class="db-val" id="db-size">—</span></div>
-      <div class="db-row"><span class="db-lbl">Videos registrados</span><span class="db-val" id="db-vids">—</span></div>
-      <div class="db-row"><span class="db-lbl">Videos publicados</span><span class="db-val" id="db-pub">—</span></div>
-      <div class="db-row"><span class="db-lbl">Temas totales</span><span class="db-val" id="db-temas">—</span></div>
-      <div class="db-row"><span class="db-lbl">Temas disponibles</span><span class="db-val" id="db-temas-free">—</span></div>
-      <div class="db-row"><span class="db-lbl">Canales</span><span class="db-val" id="db-canales">—</span></div>
-      <div style="margin-top:10px"><a href="https://supabase.com/dashboard/project/xkdtpzxgtjujcopbcrwy" target="_blank" class="api-btn" style="display:flex;justify-content:center;width:100%">↗ Abrir Supabase</a></div>
+      <div class="dbrow"><span class="dbl">Tamaño BD</span><span class="dbv" id="db-size">—</span></div>
+      <div class="dbrow"><span class="dbl">Videos publicados</span><span class="dbv" id="db-pub">—</span></div>
+      <div class="dbrow"><span class="dbl">Temas totales</span><span class="dbv" id="db-temas">—</span></div>
+      <div class="dbrow"><span class="dbl">Temas disponibles</span><span class="dbv" id="db-tfree">—</span></div>
+      <div class="dbrow"><span class="dbl">Canales</span><span class="dbv" id="db-can">—</span></div>
+      <div style="margin-top:10px"><a href="https://supabase.com/dashboard/project/xkdtpzxgtjujcopbcrwy" target="_blank" class="lbtn" style="display:flex;justify-content:center">↗ Abrir Supabase</a></div>
     </div>
-    <div class="db-card">
+    <div class="dbcard">
       <div class="sec" style="margin-bottom:10px">Storage (Audios)</div>
-      <div class="db-row"><span class="db-lbl">Archivos subidos</span><span class="db-val" id="db-audio">—</span></div>
-      <div class="db-row"><span class="db-lbl">Límite plan Free</span><span class="db-val">500 MB</span></div>
-      <div style="margin:10px 0 4px;font-size:10px;color:var(--text3);font-family:var(--font-mono)">USO ESTIMADO</div>
-      <div class="pb" style="height:7px"><div class="pf" id="st-bar" style="width:0%;background:var(--teal)"></div></div>
-      <div style="margin-top:5px;font-size:11px;color:var(--text3)" id="st-pct">—</div>
+      <div class="dbrow"><span class="dbl">Archivos</span><span class="dbv" id="db-audio">—</span></div>
+      <div class="dbrow"><span class="dbl">Límite plan</span><span class="dbv">500 MB (Free)</span></div>
+      <div style="margin:10px 0 4px;font-size:10px;color:var(--tx3);font-family:var(--mono)">USO ESTIMADO</div>
+      <div class="pb" style="height:6px"><div class="pf" id="st-bar" style="width:0%;background:var(--teal)"></div></div>
+      <div style="margin-top:5px;font-size:11px;color:var(--tx3)" id="st-pct">—</div>
     </div>
-    <div class="db-card">
+    <div class="dbcard">
       <div class="sec" style="margin-bottom:10px">Edge Functions</div>
-      <div class="db-row"><span class="db-lbl">upload-to-youtube</span><span class="badge bt">ACTIVE</span></div>
-      <div class="db-row"><span class="db-lbl">upload-audio</span><span class="badge bt">ACTIVE</span></div>
-      <div class="db-row"><span class="db-lbl">generate-wan-video</span><span class="badge bt">ACTIVE</span></div>
-      <div class="db-row"><span class="db-lbl">dashboard-stats</span><span class="badge bt">ACTIVE</span></div>
-      <div style="margin-top:8px;font-size:11px;color:var(--text3)">Free: 2M invocaciones/mes incluidas</div>
+      <div class="dbrow"><span class="dbl">upload-to-youtube</span><span class="badge bt">ACTIVE</span></div>
+      <div class="dbrow"><span class="dbl">upload-audio</span><span class="badge bt">ACTIVE</span></div>
+      <div class="dbrow"><span class="dbl">generate-wan-video</span><span class="badge bt">ACTIVE</span></div>
+      <div class="dbrow"><span class="dbl">dashboard-stats</span><span class="badge bt">ACTIVE</span></div>
+      <div style="margin-top:8px;font-size:11px;color:var(--tx3)">Free: 2M invocaciones/mes</div>
     </div>
   </div>
   <div class="sec" style="margin-bottom:10px">Videos por Estado</div>
-  <div class="db-card"><div id="estado-chart" style="display:flex;gap:16px;flex-wrap:wrap;padding:4px 0"></div></div>
+  <div class="dbcard"><div id="est-chart" style="display:flex;gap:16px;flex-wrap:wrap;padding:4px 0"></div></div>
 </div>
 
-<!-- CANALES -->
-<div class="tab-panel" id="panel-canales">
-  <div id="canales-grid" class="three-col">
-    <div class="canal-card"><div class="sk" style="height:18px;width:60%;margin-bottom:8px"></div><div class="sk" style="height:13px;width:40%"></div></div>
-    <div class="canal-card"><div class="sk" style="height:18px;width:60%;margin-bottom:8px"></div><div class="sk" style="height:13px;width:40%"></div></div>
-    <div class="canal-card"><div class="sk" style="height:18px;width:60%;margin-bottom:8px"></div><div class="sk" style="height:13px;width:40%"></div></div>
+<!-- ══ CANALES ══ -->
+<div class="panel" id="panel-canales">
+  <div id="can-grid" class="three-col">
+    <div class="cc"><div class="sk" style="height:18px;width:60%;margin-bottom:8px"></div><div class="sk" style="height:13px;width:40%"></div></div>
+    <div class="cc"><div class="sk" style="height:18px;width:60%;margin-bottom:8px"></div><div class="sk" style="height:13px;width:40%"></div></div>
+    <div class="cc"><div class="sk" style="height:18px;width:60%;margin-bottom:8px"></div><div class="sk" style="height:13px;width:40%"></div></div>
   </div>
 </div>
 
-<!-- TEMAS -->
-<div class="tab-panel" id="panel-temas">
-  <div id="temas-container"><div class="empty"><div class="ico">⏳</div><p>Cargando temas...</p></div></div>
+<!-- ══ TEMAS ══ -->
+<div class="panel" id="panel-temas">
+  <div id="temas-con"><div class="empty"><div class="ico">⏳</div><p>Cargando...</p></div></div>
 </div>
 
 </main>
 
 <script>
-// ── CONFIG ─────────────────────────────────────────────────────────────────
-const SB_URL  = 'https://xkdtpzxgtjujcopbcrwy.supabase.co';
-// JWT anon key (works from browser)
-const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhrZHRwenhndGp1amNvcGJjcnd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MzA1MDksImV4cCI6MjA5MTUwNjUwOX0.ldlwfTheYsdDhasipWZaz7jzd93KOP1pmZ87HCIFcDU';
-const STATS   = SB_URL + '/functions/v1/dashboard-stats';
-const sbH     = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
+const SB_URL = 'https://xkdtpzxgtjujcopbcrwy.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhrZHRwenhndGp1amNvcGJjcnd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MzA1MDksImV4cCI6MjA5MTUwNjUwOX0.ldlwfTheYsdDhasipWZaz7jzd93KOP1pmZ87HCIFcDU';
+const STATS  = SB_URL + '/functions/v1/dashboard-stats';
+const sbH    = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
 
-// ── CLOCK ──────────────────────────────────────────────────────────────────
-function tick() {
-  document.getElementById('clock').textContent =
-    new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) + ' · PE';
-}
+let allVideos = [], canalMap = {}, allCanales = [];
+
+// Clock
+function tick(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · PE';}
 tick(); setInterval(tick,1000);
 
-// ── TABS ───────────────────────────────────────────────────────────────────
-function showTab(id, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+// Tabs
+function showTab(id,btn){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('panel-'+id).classList.add('active');
 }
 
-// ── HELPERS ────────────────────────────────────────────────────────────────
-function badge(e) {
+// Helpers
+function badge(e){
   const m={publicado:['bt','● Publicado'],publicando:['ba','● Publicando'],renderizando:['ba','● Render'],
     generando_audio:['bb','● Audio'],generando_script:['bb','● Script'],error:['br','✕ Error']};
-  const[c,l]=m[e]||['bg',e||'—'];
-  return `<span class="badge ${c}">${l}</span>`;
+  const[c,l]=m[e]||['bg',e||'—'];return`<span class="badge ${c}">${l}</span>`;
 }
 function fmt(d){if(!d)return'—';return new Date(d).toLocaleDateString('es-PE',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
 function fmtN(n){if(n==null)return'—';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'K';return String(n);}
 
-// ── LOAD VIDEOS ────────────────────────────────────────────────────────────
-async function loadVideos() {
-  try {
-    const [vr,cr] = await Promise.all([
-      fetch(SB_URL+'/rest/v1/videos?order=created_at.desc&limit=60',{headers:sbH}).then(r=>r.json()),
-      fetch(SB_URL+'/rest/v1/canales?select=id,nombre',{headers:sbH}).then(r=>r.json()),
-    ]);
-    if(!Array.isArray(vr)){console.error('videos',vr);return;}
-    const cMap={};
-    if(Array.isArray(cr)) cr.forEach(c=>cMap[c.id]=c.nombre);
-
-    const pub   = vr.filter(v=>v.estado==='publicado').length;
-    const proc  = vr.filter(v=>v.estado&&v.estado!=='publicado'&&v.estado!=='error').length;
-    const err   = vr.filter(v=>v.estado==='error').length;
-
-    document.getElementById('k-total').textContent = vr.length;
-    document.getElementById('k-pub').textContent   = pub;
-    document.getElementById('k-proc').textContent  = proc;
-    document.getElementById('k-err').textContent   = err;
-    document.getElementById('tc-pipeline').textContent = vr.length;
-    document.getElementById('cre-val').textContent  = pub;
-
-    const rows = vr.map(v=>`
-      <div class="vt-row">
-        <div class="vt-title" title="${v.titulo||''}">${v.titulo||'(sin título)'}</div>
-        <div style="font-size:12px;color:var(--text2)">${cMap[v.canal_id]||'—'}</div>
-        <div>${badge(v.estado)}</div>
-        <div style="font-size:11px;color:var(--text2);font-family:var(--font-mono)">${fmt(v.publicado_en||v.created_at)}</div>
-        <div>${v.youtube_video_id?`<a class="yt-link" href="https://youtube.com/watch?v=${v.youtube_video_id}" target="_blank">▶ ${v.youtube_video_id.substring(0,8)}…</a>`:'<span style="color:var(--text3)">—</span>'}</div>
-        <div style="font-size:11px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(v.tema||'').substring(0,28)}</div>
-      </div>`).join('');
-    document.getElementById('vt-body').innerHTML = rows||`<div class="empty"><div class="ico">📹</div><p>No hay videos aún</p></div>`;
-  } catch(e){console.error('loadVideos',e);}
+// ── FILTER ──────────────────────────────────────────────────────────────
+function applyFilter(){
+  const sel = document.getElementById('canal-filter').value;
+  const filtered = sel ? allVideos.filter(v=>v.canal_id===sel) : allVideos;
+  renderVideoRows(filtered);
+  document.getElementById('filter-count').textContent =
+    sel ? filtered.length+' videos de este canal' : '';
 }
 
-// ── LOAD CANALES ───────────────────────────────────────────────────────────
-async function loadCanales() {
-  try {
-    const [cr,vr,tr] = await Promise.all([
+function renderVideoRows(videos){
+  if(!videos.length){
+    document.getElementById('vt-body').innerHTML='<div class="empty"><div class="ico">📹</div><p>No hay videos</p></div>';
+    return;
+  }
+  document.getElementById('vt-body').innerHTML = videos.map(v=>`
+    <div class="vrow">
+      <div class="vtit" title="${v.titulo||''}">${v.titulo||'(sin título)'}</div>
+      <div style="font-size:12px;color:var(--tx2)">${canalMap[v.canal_id]||'—'}</div>
+      <div>${badge(v.estado)}</div>
+      <div style="font-size:11px;color:var(--tx2);font-family:var(--mono)">${fmt(v.publicado_en||v.created_at)}</div>
+      <div>${v.youtube_video_id?`<a class="ytl" href="https://youtube.com/watch?v=${v.youtube_video_id}" target="_blank">▶ ${v.youtube_video_id.substring(0,8)}…</a>`:'<span style="color:var(--tx3)">—</span>'}</div>
+      <div style="font-size:11px;color:var(--tx3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(v.tema||'').substring(0,28)}</div>
+    </div>`).join('');
+}
+
+// ── VIDEOS ───────────────────────────────────────────────────────────────
+async function loadVideos(){
+  try{
+    const[vr,cr]=await Promise.all([
+      fetch(SB_URL+'/rest/v1/videos?order=created_at.desc&limit=100',{headers:sbH}).then(r=>r.json()),
+      fetch(SB_URL+'/rest/v1/canales?order=nombre',{headers:sbH}).then(r=>r.json()),
+    ]);
+    if(!Array.isArray(vr)||!Array.isArray(cr)) return;
+
+    allVideos=[...vr]; canalMap={}; allCanales=[...cr];
+    cr.forEach(c=>canalMap[c.id]=c.nombre);
+
+    // KPIs
+    const pub  = vr.filter(v=>v.estado==='publicado').length;
+    const proc = vr.filter(v=>v.estado&&v.estado!=='publicado'&&v.estado!=='error').length;
+    const err  = vr.filter(v=>v.estado==='error').length;
+    document.getElementById('k-tot').textContent=vr.length;
+    document.getElementById('k-pub').textContent=pub;
+    document.getElementById('k-proc').textContent=proc;
+    document.getElementById('k-err').textContent=err;
+    document.getElementById('tc-p').textContent=vr.length;
+
+    // Populate filter dropdown
+    const sel=document.getElementById('canal-filter');
+    const prev=sel.value;
+    sel.innerHTML='<option value="">Todos los canales</option>'+
+      cr.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+    if(prev) sel.value=prev;
+
+    applyFilter();
+  }catch(e){console.error('loadVideos',e);}
+}
+
+// ── CANALES ──────────────────────────────────────────────────────────────
+async function loadCanales(){
+  try{
+    const[cr,vr,tr]=await Promise.all([
       fetch(SB_URL+'/rest/v1/canales?order=nombre',{headers:sbH}).then(r=>r.json()),
       fetch(SB_URL+'/rest/v1/videos?select=canal_id,estado',{headers:sbH}).then(r=>r.json()),
       fetch(SB_URL+'/rest/v1/temas?select=canal_id,usado',{headers:sbH}).then(r=>r.json()),
     ]);
-    if(!Array.isArray(cr)){console.error('canales',cr);return;}
-
-    document.getElementById('hdr-canales').textContent = cr.length+' canales';
-    document.getElementById('hdr-rate').textContent    = cr.length+' videos/día';
-    document.getElementById('tc-canales').textContent  = cr.length;
-    document.getElementById('db-canales').textContent  = cr.length;
-
+    if(!Array.isArray(cr)) return;
+    document.getElementById('hdr-c').textContent=cr.length+' canales';
+    document.getElementById('hdr-r').textContent=cr.length+' videos/día';
+    document.getElementById('tc-c').textContent=cr.length;
+    document.getElementById('db-can').textContent=cr.length;
     const cronMap={crimen:'13:00',curiosidades:'14:00',finanzas:'15:00'};
-    const html = cr.map(c=>{
-      const vids  = Array.isArray(vr) ? vr.filter(v=>v.canal_id===c.id) : [];
-      const temas = Array.isArray(tr) ? tr.filter(t=>t.canal_id===c.id) : [];
-      const pub   = vids.filter(v=>v.estado==='publicado').length;
-      const free  = temas.filter(t=>!t.usado).length;
-      return `<div class="canal-card">
-        <div><div style="font-weight:600;font-size:15px">${c.nombre}</div><span class="c-nicho">${c.nicho}</span></div>
-        <div class="c-stats">
-          <div class="c-stat"><div class="c-val">${vids.length}</div><div class="c-lbl">Videos</div></div>
-          <div class="c-stat"><div class="c-val" style="color:var(--teal)">${pub}</div><div class="c-lbl">Publicados</div></div>
-          <div class="c-stat"><div class="c-val" style="color:var(--amber)">${free}</div><div class="c-lbl">Temas libres</div></div>
+    document.getElementById('can-grid').innerHTML=cr.map(c=>{
+      const vids=Array.isArray(vr)?vr.filter(v=>v.canal_id===c.id):[];
+      const temas=Array.isArray(tr)?tr.filter(t=>t.canal_id===c.id):[];
+      const pub=vids.filter(v=>v.estado==='publicado').length;
+      const free=temas.filter(t=>!t.usado).length;
+      return`<div class="cc">
+        <div><div style="font-weight:600;font-size:15px">${c.nombre}</div><span class="cnicho">${c.nicho}</span></div>
+        <div class="cstats">
+          <div class="cst"><div class="csv">${vids.length}</div><div class="csl">Videos</div></div>
+          <div class="cst"><div class="csv" style="color:var(--teal)">${pub}</div><div class="csl">Publicados</div></div>
+          <div class="cst"><div class="csv" style="color:var(--amb)">${free}</div><div class="csl">Temas libres</div></div>
         </div>
-        <div style="font-size:11px;color:var(--text3)">Cron: ${cronMap[c.nicho]||'?'} · 1 video/día</div>
+        <div style="font-size:11px;color:var(--tx3)">Cron: ${cronMap[c.nicho]||'?'} · 1 video/día</div>
       </div>`;
     }).join('');
-    document.getElementById('canales-grid').innerHTML = html;
-  } catch(e){console.error('loadCanales',e);}
+  }catch(e){console.error('loadCanales',e);}
 }
 
-// ── LOAD TEMAS ─────────────────────────────────────────────────────────────
-async function loadTemas() {
-  try {
-    const [cr,tr] = await Promise.all([
+// ── TEMAS ────────────────────────────────────────────────────────────────
+async function loadTemas(){
+  try{
+    const[cr,tr]=await Promise.all([
       fetch(SB_URL+'/rest/v1/canales?select=id,nombre',{headers:sbH}).then(r=>r.json()),
       fetch(SB_URL+'/rest/v1/temas?order=usado.asc,prioridad.desc',{headers:sbH}).then(r=>r.json()),
     ]);
-    if(!Array.isArray(tr)){console.error('temas',tr);return;}
-
-    const cMap={};
-    if(Array.isArray(cr)) cr.forEach(c=>cMap[c.id]=c.nombre);
-    const free = tr.filter(t=>!t.usado).length;
-    document.getElementById('tc-temas').textContent = free+' libres';
-
-    const byCanal={};
-    tr.forEach(t=>{ const c=cMap[t.canal_id]||t.canal_id; if(!byCanal[c])byCanal[c]=[]; byCanal[c].push(t); });
-
+    if(!Array.isArray(tr)) return;
+    const cm={};if(Array.isArray(cr))cr.forEach(c=>cm[c.id]=c.nombre);
+    const free=tr.filter(t=>!t.usado).length;
+    document.getElementById('tc-t').textContent=free+' libres';
+    const byC={};
+    tr.forEach(t=>{const c=cm[t.canal_id]||t.canal_id;if(!byC[c])byC[c]=[];byC[c].push(t);});
     let html='';
-    for(const [canal,temas] of Object.entries(byCanal)){
+    for(const[canal,temas]of Object.entries(byC)){
       const f=temas.filter(t=>!t.usado).length;
       html+=`<div style="margin-bottom:18px">
-        <div class="sec">${canal} <span style="color:var(--teal);font-family:var(--font-mono);font-size:10px">${f} disponibles / ${temas.length}</span></div>
-        <div class="topic-list">
-          ${temas.slice(0,20).map(t=>`<div class="topic-row ${t.usado?'used':''}">
-            <span style="color:${t.usado?'var(--teal)':'var(--text3)'};font-size:9px;font-family:var(--font-mono)">${t.usado?'✓':'○'}</span>
-            <span style="flex:1">${t.titulo_sugerido}</span>
-            <span style="font-size:10px;color:var(--text3);font-family:var(--font-mono)">P${t.prioridad}</span>
-            ${t.usado?'<span class="badge bt" style="font-size:9px">USADO</span>':''}
-          </div>`).join('')}
-          ${temas.length>20?`<div class="topic-row" style="color:var(--text3);font-size:11px">... y ${temas.length-20} más</div>`:''}
+        <div class="sec">${canal} <span style="color:var(--teal);font-family:var(--mono);font-size:10px">${f} disponibles / ${temas.length}</span></div>
+        <div class="tlist">${temas.slice(0,20).map(t=>`<div class="trow ${t.usado?'used':''}">
+          <span style="color:${t.usado?'var(--teal)':'var(--tx3)'};font-size:9px;font-family:var(--mono)">${t.usado?'✓':'○'}</span>
+          <span style="flex:1">${t.titulo_sugerido}</span>
+          <span style="font-size:10px;color:var(--tx3);font-family:var(--mono)">P${t.prioridad}</span>
+          ${t.usado?'<span class="badge bt" style="font-size:9px">USADO</span>':''}
+        </div>`).join('')}
+        ${temas.length>20?`<div class="trow" style="color:var(--tx3);font-size:11px">... y ${temas.length-20} más</div>`:''}
         </div>
       </div>`;
     }
-    document.getElementById('temas-container').innerHTML=html||`<div class="empty"><div class="ico">📋</div><p>Sin temas</p></div>`;
-  } catch(e){console.error('loadTemas',e);}
+    document.getElementById('temas-con').innerHTML=html||'<div class="empty"><div class="ico">📋</div><p>Sin temas</p></div>';
+  }catch(e){console.error('loadTemas',e);}
 }
 
-// ── LOAD API STATS (Edge Function) ─────────────────────────────────────────
-async function loadApiStats() {
-  try {
-    const r = await fetch(STATS, {headers:{'Content-Type':'application/json'}});
-    const d = await r.json();
-    if(d.error){console.error('dashboard-stats error:',d.error);return;}
+// ── API STATS + CREDITS ──────────────────────────────────────────────────
+async function loadApiStats(){
+  try{
+    const r=await fetch(STATS);
+    const d=await r.json();
+    if(d.error){console.error('stats error',d.error);return;}
 
-    // DB stats
-    document.getElementById('db-size').textContent       = d.db?.size_pretty||'N/A';
-    document.getElementById('db-vids').textContent       = d.db?.videos_total??'—';
-    document.getElementById('db-pub').textContent        = d.db?.por_estado?.publicado||0;
-    document.getElementById('db-temas').textContent      = d.db?.temas_total??'—';
-    document.getElementById('db-temas-free').textContent = (d.db?.temas_total||0)-(d.db?.temas_usados||0);
+    // DB
+    document.getElementById('db-size').textContent  = d.db?.size_pretty||'N/A';
+    document.getElementById('db-pub').textContent   = d.db?.por_estado?.publicado||0;
+    document.getElementById('db-temas').textContent = d.db?.temas_total??'—';
+    document.getElementById('db-tfree').textContent = (d.db?.temas_total||0)-(d.db?.temas_usados||0);
 
     // Storage
-    const af = d.db?.audio_files||0;
-    const sm = (af*0.2).toFixed(1);
-    const sp = Math.min(100,((sm/500)*100)).toFixed(1);
-    document.getElementById('db-audio').textContent = af+' archivos';
-    document.getElementById('st-bar').style.width   = sp+'%';
-    document.getElementById('st-pct').textContent   = `~${sm} MB / 500 MB (${sp}%)`;
+    const af=d.db?.audio_files||0;
+    const sm=(af*0.2).toFixed(1);
+    const sp=Math.min(100,((sm/500)*100)).toFixed(1);
+    document.getElementById('db-audio').textContent=af+' archivos';
+    document.getElementById('st-bar').style.width=sp+'%';
+    document.getElementById('st-pct').textContent=`~${sm} MB / 500 MB (${sp}%)`;
 
     // Estado chart
-    const estados = d.db?.por_estado||{};
-    const colors  = {publicado:'#00d4a8',generando_audio:'#4d9fff',generando_script:'#4d9fff',renderizando:'#f5a623',publicando:'#f5a623',error:'#ff4d6a'};
-    document.getElementById('estado-chart').innerHTML = Object.entries(estados).map(([e,n])=>`
+    const ec=d.db?.por_estado||{};
+    const ecolors={publicado:'#00d4a8',generando_audio:'#4d9fff',generando_script:'#4d9fff',renderizando:'#f5a623',publicando:'#f5a623',error:'#ff4d6a'};
+    document.getElementById('est-chart').innerHTML=Object.entries(ec).map(([e,n])=>`
       <div style="text-align:center;min-width:90px">
-        <div style="font-size:26px;font-family:var(--font-mono);font-weight:700;color:${colors[e]||'#8a9ab0'}">${n}</div>
-        <div style="font-size:9px;color:var(--text3);margin-top:3px;font-family:var(--font-mono)">${e.replace(/_/g,' ').toUpperCase()}</div>
-      </div>`).join('')||'<p style="color:var(--text3);font-size:12px">Sin datos</p>';
+        <div style="font-size:26px;font-family:var(--mono);font-weight:700;color:${ecolors[e]||'#8a9ab0'}">${n}</div>
+        <div style="font-size:9px;color:var(--tx3);margin-top:3px;font-family:var(--mono)">${e.replace(/_/g,' ').toUpperCase()}</div>
+      </div>`).join('')||'<p style="color:var(--tx3);font-size:12px">Sin datos</p>';
 
-    // fal.ai
-    const fal = d.apis?.fal;
-    if(fal && !fal.error && fal.status !== 404) {
-      const bal = fal.balance??fal.credits??fal.amount??null;
-      if(bal!=null){
-        document.getElementById('fal-val').textContent = '$'+Number(bal).toFixed(2);
-        const pct=Math.min(100,Math.max(0,(1-(bal/50))*100)).toFixed(0);
-        document.getElementById('fal-pct').textContent = pct+'% usado';
-        document.getElementById('fal-bar').style.width = pct+'%';
-      } else {
-        document.getElementById('fal-val').textContent = 'Ver dashboard';
-        document.getElementById('fal-sub').textContent = 'API no expone balance · Revisar en fal.ai/dashboard';
-      }
-    } else {
-      document.getElementById('fal-val').textContent = 'Ver dashboard';
-      document.getElementById('fal-sub').textContent = 'wan-t2v · $0.20–$0.40/clip · Revisar en fal.ai/dashboard';
-    }
+    // ── CREDITS PANEL ──
+    const credits = d.credits || [];
+    renderCredits(credits);
 
-    // ElevenLabs
-    const el = d.apis?.elevenlabs;
-    if(el && !el.error){
-      const used  = el.character_count||0;
-      const limit = el.character_limit||100000;
-      const rem   = limit-used;
-      document.getElementById('el-val').textContent = fmtN(rem)+' chars';
-      document.getElementById('el-sub').textContent = `Plan: ${el.tier||'—'} · ${fmtN(used)}/${fmtN(limit)} usados`;
-      const pct=Math.min(100,Math.round((used/limit)*100));
-      document.getElementById('el-pct').textContent = pct+'% usado';
-      document.getElementById('el-bar').style.width = pct+'%';
-    } else {
-      const msg = el?.error||'Sin datos';
-      document.getElementById('el-val').textContent = '—';
-      document.getElementById('el-sub').textContent = msg+' · Ver en elevenlabs.io/subscription';
-    }
-
-  } catch(e){console.error('loadApiStats',e);}
+  }catch(e){console.error('loadApiStats',e);}
 }
 
-// ── LOAD ALL ───────────────────────────────────────────────────────────────
-async function loadAll() {
-  await Promise.all([loadVideos(), loadCanales(), loadTemas(), loadApiStats()]);
+function renderCredits(credits){
+  const iconStyles={
+    fal_ai:     {bg:'#7c3aed20',color:'#a78bfa'},
+    elevenlabs: {bg:'#f59e0b20',color:'#f59e0b'},
+    anthropic:  {bg:'#ec489920',color:'#ec4899'},
+    creatomate: {bg:'#00d4a820',color:'#00d4a8'},
+    railway:    {bg:'#8b5cf620',color:'#8b5cf6'},
+  };
+
+  let alertCount=0;
+
+  const html = credits.map(c=>{
+    const st   = iconStyles[c.api_name]||{bg:'#ffffff10',color:'#8a9ab0'};
+    const bal  = c.balance;
+    const unit = c.balance_unit||'USD';
+    const warnT= c.threshold_warning;
+    const critT= c.threshold_critical;
+
+    // Determine alert level
+    let alertLevel = '';
+    let alertMsg   = '';
+    let alertTip   = '';
+
+    if(bal!=null && warnT!=null){
+      if(critT!=null && bal<=critT){
+        alertLevel='crit';
+        alertCount++;
+        alertTip=`🚨 CRÍTICO: Quedan ${fmtN(bal)} ${unit}. ¡Renovar AHORA antes de que el sistema falle!`;
+        alertMsg='CRÍTICO';
+      } else if(bal<=warnT){
+        alertLevel='warn';
+        alertCount++;
+        alertTip=`⚠️ AVISO: Quedan ${fmtN(bal)} ${unit}. Considera renovar pronto.`;
+        alertMsg='BAJO';
+      }
+    }
+
+    // Format balance display
+    let balDisplay = '—';
+    let balSub = c.notes||'';
+    if(c.balance_label) balDisplay=c.balance_label;
+    else if(bal!=null){
+      if(unit==='USD') balDisplay='$'+Number(bal).toFixed(2);
+      else if(unit==='chars') balDisplay=fmtN(bal)+' chars';
+      else if(unit==='renders') balDisplay=fmtN(bal)+' renders';
+      else balDisplay=fmtN(bal)+' '+unit;
+    }
+
+    // Progress bar
+    let pctHtml='';
+    if(bal!=null && warnT!=null){
+      // For USD: show percentage of warning threshold
+      // For chars: ElevenLabs stores remaining, threshold is percentage
+      let pct=0;
+      if(unit==='chars' && c.threshold_warning<=100){
+        // threshold is a percentage of used
+        pct = bal>0 ? Math.min(100, Math.round((bal/1000000)*100)) : 0; // rough
+      } else if(unit==='USD'){
+        const maxBal=c.api_name==='fal_ai'?50:c.api_name==='railway'?5:20;
+        pct=Math.min(100,Math.round((bal/maxBal)*100));
+      }
+      const barColor = alertLevel==='crit'?'var(--red)':alertLevel==='warn'?'var(--amb)':st.color;
+      pctHtml=`<div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);margin-bottom:3px">
+          <span>Saldo</span><span>${pct}%</span>
+        </div>
+        <div class="pb"><div class="pf" style="width:${pct}%;background:${barColor}"></div></div>
+      </div>`;
+    }
+
+    // Renewal date
+    let renewHtml='';
+    if(c.renewal_date){
+      const days=Math.ceil((new Date(c.renewal_date)-new Date())/(1000*60*60*24));
+      renewHtml=`<div style="font-size:10px;color:${days<7?'var(--red)':days<14?'var(--amb)':'var(--tx3)'}">
+        📅 Renovación: ${new Date(c.renewal_date).toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'})}
+        ${days<14?` (${days} días)`:''}
+      </div>`;
+    }
+
+    const updatedAgo = c.updated_at ? timeAgo(c.updated_at) : '';
+
+    return`<div class="cred-card ${alertLevel}">
+      <div class="cred-hdr">
+        <div class="cred-name">
+          <div class="cred-icon" style="background:${st.bg};color:${st.color}">${c.icon||'?'}</div>
+          ${c.display_name}
+          ${alertLevel?`<div class="tooltip"><span class="alert-badge ${alertLevel}">⚠ ${alertMsg}</span><div class="tip">${alertTip}</div></div>`:''}
+        </div>
+        <div class="cred-actions">
+          ${c.auto_fetch?'<span style="font-size:9px;color:var(--teal);font-family:var(--mono)">AUTO</span>':''}
+          <a class="lbtn" href="${c.billing_url||'#'}" target="_blank">↗ ${c.billing_cycle==='prepago'?'Recargar':'Renovar'}</a>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:10px;color:var(--tx3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em">Saldo / Créditos</div>
+        <div style="font-size:26px;font-family:var(--mono);font-weight:700;color:${st.color};margin-top:2px"
+             onclick="editBalance('${c.api_name}','${bal??''}')" title="Click para editar" style="cursor:pointer">${balDisplay}</div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:3px">${balSub}</div>
+      </div>
+
+      ${pctHtml}
+      ${renewHtml}
+
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div id="edit-row-${c.api_name}" style="display:none" class="edit-row">
+          <input class="edit-input" id="edit-inp-${c.api_name}" type="number" step="0.01" placeholder="Nuevo saldo">
+          <button class="save-btn" onclick="saveBalance('${c.api_name}','${unit}')">Guardar</button>
+          <button class="rbtn" onclick="cancelEdit('${c.api_name}')" style="padding:4px 8px;font-size:10px">✕</button>
+        </div>
+        ${updatedAgo?`<span style="font-size:9px;color:var(--tx3);font-family:var(--mono);margin-left:auto">Act. ${updatedAgo}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('credits-grid').innerHTML=html;
+
+  // Update API tab badge
+  const tab=document.querySelector('.tab[onclick*="apis"]');
+  const badge=tab.querySelector('.tc');
+  if(alertCount>0){
+    if(!badge){ tab.insertAdjacentHTML('beforeend',`<span class="tc crit" id="tc-api">${alertCount} alerta${alertCount>1?'s':''}</span>`); }
+    else { badge.textContent=alertCount+' alerta'+(alertCount>1?'s':''); badge.className='tc crit'; }
+  } else {
+    if(!badge) tab.insertAdjacentHTML('beforeend','<span class="tc" id="tc-api">OK</span>');
+    else { badge.textContent='OK'; badge.className='tc'; }
+  }
+}
+
+function timeAgo(ts){
+  const diff=Date.now()-new Date(ts).getTime();
+  const m=Math.floor(diff/60000);
+  if(m<1)return'ahora';if(m<60)return m+'m';
+  const h=Math.floor(m/60);if(h<24)return h+'h';
+  return Math.floor(h/24)+'d';
+}
+
+// ── EDIT BALANCE ──────────────────────────────────────────────────────────
+function editBalance(apiName, currentVal){
+  document.querySelectorAll('[id^="edit-row-"]').forEach(el=>el.style.display='none');
+  const row=document.getElementById('edit-row-'+apiName);
+  if(row){ row.style.display='flex'; const inp=document.getElementById('edit-inp-'+apiName); if(inp&&currentVal)inp.value=currentVal; if(inp)inp.focus(); }
+}
+function cancelEdit(apiName){
+  const row=document.getElementById('edit-row-'+apiName);
+  if(row) row.style.display='none';
+}
+async function saveBalance(apiName, unit){
+  const inp=document.getElementById('edit-inp-'+apiName);
+  const val=parseFloat(inp?.value);
+  if(isNaN(val)){alert('Valor inválido');return;}
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/api_credits?api_name=eq.'+apiName,{
+      method:'PATCH',
+      headers:{...sbH,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({balance:val,balance_label:null,updated_at:new Date().toISOString()})
+    });
+    if(!r.ok){alert('Error guardando');return;}
+    cancelEdit(apiName);
+    await loadApiStats();
+  }catch(e){alert('Error: '+e.message);}
+}
+
+// ── LOAD ALL ──────────────────────────────────────────────────────────────
+async function loadAll(){
+  await Promise.all([loadVideos(),loadCanales(),loadTemas(),loadApiStats()]);
 }
 loadAll();
 setInterval(loadAll, 90000);
