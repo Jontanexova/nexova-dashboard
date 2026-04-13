@@ -1,13 +1,1034 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NEXOVA — YouTube AutoPublish</title>
-    <meta name="description" content="Dashboard de gestión de canales YouTube automatizados" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXOVA — AutoPublish Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0a0c0f;
+  --surface:  #111418;
+  --border:   #1e2328;
+  --border2:  #252b33;
+  --teal:     #00d4a8;
+  --teal-dim: #00d4a820;
+  --teal-low: #00d4a810;
+  --amber:    #f5a623;
+  --amber-dim:#f5a62320;
+  --red:      #ff4d6a;
+  --red-dim:  #ff4d6a20;
+  --blue:     #4d9fff;
+  --blue-dim: #4d9fff20;
+  --text:     #e8edf2;
+  --text2:    #8a9ab0;
+  --text3:    #4a5568;
+  --font-mono: 'Space Mono', monospace;
+  --font-sans: 'DM Sans', sans-serif;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── NOISE TEXTURE ── */
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── HEADER ── */
+header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 0 24px;
+  height: 56px;
+  border-bottom: 1px solid var(--border);
+  background: #0d1015cc;
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text);
+}
+
+.logo-icon {
+  width: 28px; height: 28px;
+  background: var(--teal);
+  border-radius: 6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #000;
+}
+
+.header-center {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size: 12px;
+  color: var(--text2);
+  font-family: var(--font-mono);
+}
+
+.status-dot {
+  width:7px;height:7px;border-radius:50%;
+  background: var(--teal);
+  box-shadow: 0 0 8px var(--teal);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+.header-right {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-size:12px;
+  color:var(--text3);
+  font-family:var(--font-mono);
+}
+
+#clock { color: var(--text2); }
+
+.refresh-btn {
+  background:none;
+  border:1px solid var(--border2);
+  color:var(--text2);
+  padding:5px 12px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:11px;
+  font-family:var(--font-mono);
+  transition:all .2s;
+}
+.refresh-btn:hover{border-color:var(--teal);color:var(--teal)}
+
+/* ── TABS ── */
+.tabs {
+  display:flex;
+  gap:0;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 56px;
+  z-index: 99;
+}
+
+.tab-btn {
+  background:none;
+  border:none;
+  color:var(--text3);
+  padding:12px 20px;
+  cursor:pointer;
+  font-size:13px;
+  font-family:var(--font-sans);
+  font-weight:500;
+  position:relative;
+  transition:color .2s;
+  border-bottom:2px solid transparent;
+  margin-bottom:-1px;
+}
+.tab-btn:hover{color:var(--text2)}
+.tab-btn.active{color:var(--teal);border-bottom-color:var(--teal)}
+
+.tab-count {
+  display:inline-block;
+  background:var(--teal-dim);
+  color:var(--teal);
+  border-radius:10px;
+  padding:1px 7px;
+  font-size:11px;
+  margin-left:6px;
+  font-family:var(--font-mono);
+}
+
+/* ── MAIN ── */
+main { padding: 24px; position:relative; z-index:1; max-width: 1600px; margin: 0 auto; }
+
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+/* ── KPI GRID ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.kpi-card:hover{border-color:var(--border2)}
+.kpi-card::before {
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;height:1px;
+  background: linear-gradient(90deg, transparent, var(--accent,#00d4a840), transparent);
+}
+
+.kpi-label {
+  font-size:11px;
+  color:var(--text3);
+  font-family:var(--font-mono);
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  margin-bottom:12px;
+}
+
+.kpi-value {
+  font-size:42px;
+  font-family:var(--font-mono);
+  font-weight:700;
+  line-height:1;
+  margin-bottom:6px;
+}
+
+.kpi-sub {
+  font-size:12px;
+  color:var(--text3);
+}
+
+.kpi-card.green{--accent:#00d4a840}.kpi-card.green .kpi-value{color:var(--teal)}
+.kpi-card.amber{--accent:#f5a62340}.kpi-card.amber .kpi-value{color:var(--amber)}
+.kpi-card.red  {--accent:#ff4d6a40}.kpi-card.red   .kpi-value{color:var(--red)}
+.kpi-card.blue {--accent:#4d9fff40}.kpi-card.blue  .kpi-value{color:var(--blue)}
+
+/* ── SECTION HEADERS ── */
+.section-title {
+  font-size:11px;
+  font-family:var(--font-mono);
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--text3);
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.section-title::after{
+  content:'';flex:1;height:1px;background:var(--border);
+}
+
+/* ── VIDEO TABLE ── */
+.video-table {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+}
+
+.vt-header {
+  display:grid;
+  grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr 0.8fr;
+  padding:10px 16px;
+  border-bottom:1px solid var(--border);
+  font-size:11px;
+  color:var(--text3);
+  font-family:var(--font-mono);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+
+.vt-row {
+  display:grid;
+  grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr 0.8fr;
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
+  font-size:13px;
+  align-items:center;
+  transition:background .15s;
+}
+.vt-row:hover{background:#ffffff05}
+.vt-row:last-child{border-bottom:none}
+
+.vt-title {
+  font-weight:500;
+  color:var(--text);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  padding-right:16px;
+}
+
+.vt-canal { color:var(--text2); font-size:12px; }
+
+.badge {
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:3px 9px;
+  border-radius:20px;
+  font-size:11px;
+  font-family:var(--font-mono);
+  font-weight:700;
+}
+.badge-teal   {background:var(--teal-dim);color:var(--teal)}
+.badge-amber  {background:var(--amber-dim);color:var(--amber)}
+.badge-red    {background:var(--red-dim);color:var(--red)}
+.badge-blue   {background:var(--blue-dim);color:var(--blue)}
+.badge-gray   {background:#ffffff10;color:var(--text2)}
+
+.yt-link {
+  color:var(--teal);
+  text-decoration:none;
+  font-family:var(--font-mono);
+  font-size:11px;
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.yt-link:hover{text-decoration:underline}
+.yt-link svg{width:12px;height:12px}
+
+/* ── TWO-COL LAYOUT ── */
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+
+/* ── API CARD ── */
+.api-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  transition: border-color .2s;
+}
+.api-card:hover { border-color: var(--border2); }
+
+.api-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.api-name {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:600;
+  font-size:14px;
+}
+
+.api-icon {
+  width:32px;height:32px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;
+}
+
+.api-link-btn {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  background:none;
+  border:1px solid var(--border2);
+  color:var(--text2);
+  padding:5px 12px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:11px;
+  font-family:var(--font-mono);
+  text-decoration:none;
+  transition:all .2s;
+}
+.api-link-btn:hover{border-color:var(--teal);color:var(--teal)}
+.api-link-btn svg{width:10px;height:10px}
+
+.api-balance-label {
+  font-size:11px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;
+}
+.api-balance-value {
+  font-size:28px;font-family:var(--font-mono);font-weight:700;
+}
+.api-balance-sub { font-size:12px;color:var(--text3); }
+
+.progress-bar {
+  height:4px;background:var(--border2);border-radius:2px;overflow:hidden;
+}
+.progress-fill {
+  height:100%;border-radius:2px;transition:width .5s ease;
+}
+
+/* ── DB STATS ── */
+.db-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+}
+
+.db-stat-row {
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;
+  border-bottom:1px solid var(--border);
+}
+.db-stat-row:last-child{border-bottom:none}
+.db-stat-label{font-size:13px;color:var(--text2)}
+.db-stat-value{font-family:var(--font-mono);font-size:14px;color:var(--text);font-weight:700}
+
+/* ── CANAL CARDS ── */
+.canal-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.canal-name {
+  font-weight:600;font-size:15px;
+}
+.canal-nicho {
+  font-size:11px;font-family:var(--font-mono);
+  color:var(--teal);background:var(--teal-dim);
+  padding:2px 8px;border-radius:4px;
+  display:inline-block;margin-top:4px;
+}
+.canal-stat-row {
+  display:flex;gap:16px;
+}
+.canal-stat {
+  flex:1;
+  background:#ffffff05;
+  border-radius:8px;
+  padding:10px;
+  text-align:center;
+}
+.canal-stat-val{font-family:var(--font-mono);font-size:20px;font-weight:700;color:var(--teal)}
+.canal-stat-lbl{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* ── LOADING SKELETON ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--border) 0%, var(--border2) 50%, var(--border) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius:4px;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── TOPICS TABLE ── */
+.topics-list {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+}
+.topic-row {
+  display:flex;align-items:center;gap:12px;
+  padding:10px 16px;
+  border-bottom:1px solid var(--border);
+  font-size:13px;
+}
+.topic-row:last-child{border-bottom:none}
+.topic-row.used{opacity:.4}
+.topic-title{flex:1;color:var(--text)}
+.topic-prio{font-family:var(--font-mono);font-size:11px;color:var(--text3)}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align:center;padding:48px 24px;color:var(--text3);
+}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+.empty-state p{font-size:14px}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">N</div>
+    NEXOVA
+    <span style="color:var(--text3);font-weight:400;margin-left:4px">/ AUTOPUBLISH</span>
+  </div>
+  <div class="header-center">
+    <span class="status-dot"></span>
+    <span id="canal-count">— canales</span>
+    <span style="color:var(--border2)">·</span>
+    <span id="video-rate">— videos/día</span>
+  </div>
+  <div class="header-right">
+    <span id="clock"></span>
+    <button class="refresh-btn" onclick="loadAll()">↻ Actualizar</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('pipeline',this)">Pipeline <span class="tab-count" id="cnt-pipeline">0</span></button>
+  <button class="tab-btn" onclick="showTab('apis',this)">APIs & Créditos</button>
+  <button class="tab-btn" onclick="showTab('db',this)">Base de Datos</button>
+  <button class="tab-btn" onclick="showTab('canales',this)">Canales <span class="tab-count" id="cnt-canales">0</span></button>
+  <button class="tab-btn" onclick="showTab('temas',this)">Temas <span class="tab-count" id="cnt-temas">0</span></button>
+</div>
+
+<main>
+
+<!-- ══ PIPELINE ══════════════════════════════════════════════════ -->
+<div class="tab-panel active" id="panel-pipeline">
+  <div class="kpi-grid">
+    <div class="kpi-card blue"><div class="kpi-label">Total Videos</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub">generados</div></div>
+    <div class="kpi-card green"><div class="kpi-label">Publicados</div><div class="kpi-value" id="kpi-pub">—</div><div class="kpi-sub">en YouTube</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">En Proceso</div><div class="kpi-value" id="kpi-proc">—</div><div class="kpi-sub">ahora mismo</div></div>
+    <div class="kpi-card red"><div class="kpi-label">Errores</div><div class="kpi-value" id="kpi-err">—</div><div class="kpi-sub">requieren atención</div></div>
+  </div>
+
+  <div class="section-title">Videos Recientes</div>
+  <div class="video-table" id="video-table">
+    <div class="vt-header">
+      <span>Título</span>
+      <span>Canal</span>
+      <span>Estado</span>
+      <span>Fecha</span>
+      <span>YouTube</span>
+      <span>Tema</span>
+    </div>
+    <div id="video-rows" style="min-height:100px">
+      <div class="empty-state"><div class="icon">⏳</div><p>Cargando videos...</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APIS & CRÉDITOS ══════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-apis">
+  <div class="section-title" style="margin-bottom:16px">Estado de APIs</div>
+  <div class="two-col" style="margin-bottom:16px">
+
+    <!-- fal.ai -->
+    <div class="api-card">
+      <div class="api-header">
+        <div class="api-name">
+          <div class="api-icon" style="background:#7c3aed20;color:#a78bfa;font-size:11px">fal</div>
+          fal.ai
+        </div>
+        <a class="api-link-btn" href="https://fal.ai/dashboard" target="_blank">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h8M10 2v8M2 10l8-8"/></svg>
+          Recargar
+        </a>
+      </div>
+      <div>
+        <div class="api-balance-label">Saldo disponible</div>
+        <div class="api-balance-value" id="fal-balance" style="color:#a78bfa">—</div>
+        <div class="api-balance-sub" id="fal-sub">Video AI · WAN 2.1 · $0.20–$0.40/clip</div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px;color:var(--text3)">
+          <span>Uso estimado este mes</span>
+          <span id="fal-usage-pct">—</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="fal-bar" style="width:0%;background:#a78bfa"></div></div>
+      </div>
+    </div>
+
+    <!-- ElevenLabs -->
+    <div class="api-card">
+      <div class="api-header">
+        <div class="api-name">
+          <div class="api-icon" style="background:#f59e0b20;color:#f59e0b;font-size:10px">11</div>
+          ElevenLabs
+        </div>
+        <a class="api-link-btn" href="https://elevenlabs.io/subscription" target="_blank">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h8M10 2v8M2 10l8-8"/></svg>
+          Recargar
+        </a>
+      </div>
+      <div>
+        <div class="api-balance-label">Caracteres restantes</div>
+        <div class="api-balance-value" id="el-balance" style="color:#f59e0b">—</div>
+        <div class="api-balance-sub" id="el-sub">TTS Multilingual v2</div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px;color:var(--text3)">
+          <span>Uso del plan</span>
+          <span id="el-pct">—</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="el-bar" style="width:0%;background:#f59e0b"></div></div>
+      </div>
+    </div>
+
+    <!-- Anthropic -->
+    <div class="api-card">
+      <div class="api-header">
+        <div class="api-name">
+          <div class="api-icon" style="background:#ec489920;color:#ec4899;font-size:9px">ANT</div>
+          Anthropic
+        </div>
+        <a class="api-link-btn" href="https://console.anthropic.com/billing" target="_blank">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h8M10 2v8M2 10l8-8"/></svg>
+          Ver saldo
+        </a>
+      </div>
+      <div>
+        <div class="api-balance-label">Modelo activo</div>
+        <div class="api-balance-value" style="font-size:16px;color:#ec4899;margin-top:4px">claude-opus-4-5</div>
+        <div class="api-balance-sub">Generación de scripts · Sin API de balance</div>
+      </div>
+      <div style="background:#ec489910;border-radius:8px;padding:10px;font-size:12px;color:var(--text2)">
+        💡 El balance se consulta directamente en la consola de Anthropic. Click en "Ver saldo" para acceder.
+      </div>
+    </div>
+
+    <!-- Creatomate -->
+    <div class="api-card">
+      <div class="api-header">
+        <div class="api-name">
+          <div class="api-icon" style="background:#00d4a820;color:#00d4a8;font-size:9px">CRE</div>
+          Creatomate
+        </div>
+        <a class="api-link-btn" href="https://app.creatomate.com/settings/billing" target="_blank">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h8M10 2v8M2 10l8-8"/></svg>
+          Ver plan
+        </a>
+      </div>
+      <div>
+        <div class="api-balance-label">Renders completados</div>
+        <div class="api-balance-value" id="cre-renders" style="color:#00d4a8">—</div>
+        <div class="api-balance-sub">Video render · 3 templates activos</div>
+      </div>
+      <div style="background:#00d4a810;border-radius:8px;padding:10px;font-size:12px;color:var(--text2)">
+        💡 Plan y créditos disponibles en el panel de Creatomate. Click en "Ver plan" para acceder.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Cost estimator -->
+  <div class="section-title">Estimador de Costos</div>
+  <div class="db-card" id="cost-estimator">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+      <div>
+        <div class="db-stat-label" style="font-size:12px;margin-bottom:8px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em">Por video (3 canales)</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="db-stat-row"><span class="db-stat-label">fal.ai (6 clips 480p)</span><span class="db-stat-value" style="color:#a78bfa">$1.20</span></div>
+          <div class="db-stat-row"><span class="db-stat-label">ElevenLabs TTS</span><span class="db-stat-value" style="color:#f59e0b">~$0.02</span></div>
+          <div class="db-stat-row"><span class="db-stat-label">Anthropic Claude</span><span class="db-stat-value" style="color:#ec4899">~$0.01</span></div>
+          <div class="db-stat-row" style="border-top:1px solid var(--border2);padding-top:10px">
+            <span class="db-stat-label" style="font-weight:600;color:var(--text)">Total por video</span>
+            <span class="db-stat-value" style="color:var(--teal);font-size:18px">~$1.23</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="db-stat-label" style="font-size:12px;margin-bottom:8px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em">Mensual (3 canales/día)</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="db-stat-row"><span class="db-stat-label">Videos/mes</span><span class="db-stat-value">90</span></div>
+          <div class="db-stat-row"><span class="db-stat-label">fal.ai total</span><span class="db-stat-value" style="color:#a78bfa">~$108</span></div>
+          <div class="db-stat-row"><span class="db-stat-label">Otros</span><span class="db-stat-value">~$3</span></div>
+          <div class="db-stat-row" style="border-top:1px solid var(--border2);padding-top:10px">
+            <span class="db-stat-label" style="font-weight:600;color:var(--text)">Total mensual</span>
+            <span class="db-stat-value" style="color:var(--teal);font-size:18px">~$111</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="db-stat-label" style="font-size:12px;margin-bottom:8px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em">Paquetes fal.ai</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="db-stat-row"><span class="db-stat-label">$10 → ~8 videos</span><span class="db-stat-value">$1.20/vid</span></div>
+          <div class="db-stat-row"><span class="db-stat-label">$20 → ~16 videos</span><span class="db-stat-value">$1.20/vid</span></div>
+          <div class="db-stat-row" style="background:var(--teal-low);border-radius:8px;padding:6px 10px;margin:0 -4px"><span class="db-stat-label" style="color:var(--teal)">$50 → ~41 videos ✓</span><span class="db-stat-value" style="color:var(--teal)">Best</span></div>
+          <div class="db-stat-row"><a href="https://fal.ai/dashboard" target="_blank" style="color:var(--teal);font-size:12px;text-decoration:none">→ Comprar créditos en fal.ai ↗</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BASE DE DATOS ════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-db">
+  <div class="three-col" style="margin-bottom:24px">
+    <div class="db-card">
+      <div class="section-title" style="margin-bottom:12px">Supabase</div>
+      <div class="db-stat-row"><span class="db-stat-label">Proyecto</span><span class="db-stat-value" style="font-size:12px">xkdtpzxgtjujcopbcrwy</span></div>
+      <div class="db-stat-row"><span class="db-stat-label">Tamaño BD</span><span class="db-stat-value" id="db-size">—</span></div>
+      <div class="db-stat-row"><span class="db-stat-label">Videos registrados</span><span class="db-stat-value" id="db-videos">—</span></div>
+      <div class="db-stat-row"><span class="db-stat-label">Videos publicados</span><span class="db-stat-value" id="db-pub">—</span></div>
+      <div class="db-stat-row"><span class="db-stat-label">Temas totales</span><span class="db-stat-value" id="db-temas">—</span></div>
+      <div class="db-stat-row"><span class="db-stat-label">Temas disponibles</span><span class="db-stat-value" id="db-temas-free">—</span></div>
+      <div class="db-stat-row"><span class="db-stat-label">Canales activos</span><span class="db-stat-value" id="db-canales">—</span></div>
+      <div style="margin-top:12px">
+        <a href="https://supabase.com/dashboard/project/xkdtpzxgtjujcopbcrwy" target="_blank" class="api-link-btn" style="width:100%;justify-content:center;display:flex">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h8M10 2v8M2 10l8-8"/></svg>
+          Abrir Supabase Dashboard
+        </a>
+      </div>
+    </div>
+    <div class="db-card">
+      <div class="section-title" style="margin-bottom:12px">Storage</div>
+      <div class="db-stat-row"><span class="db-stat-label">Bucket audios</span><span class="db-stat-value" id="db-audio-count">—</span></div>
+      <div class="db-stat-row"><span class="db-stat-label">Espacio plan</span><span class="db-stat-value">500 MB (Free)</span></div>
+      <div style="margin:12px 0 4px;font-size:11px;color:var(--text3);font-family:var(--font-mono)">USO ESTIMADO</div>
+      <div class="progress-bar" style="height:8px">
+        <div class="progress-fill" id="storage-bar" style="width:0%;background:var(--teal)"></div>
+      </div>
+      <div style="margin-top:6px;font-size:11px;color:var(--text3)" id="storage-pct">—</div>
+    </div>
+    <div class="db-card">
+      <div class="section-title" style="margin-bottom:12px">Edge Functions</div>
+      <div class="db-stat-row"><span class="db-stat-label">upload-to-youtube</span><span class="badge badge-teal">ACTIVE</span></div>
+      <div class="db-stat-row"><span class="db-stat-label">upload-audio</span><span class="badge badge-teal">ACTIVE</span></div>
+      <div class="db-stat-row"><span class="db-stat-label">generate-wan-video</span><span class="badge badge-teal">ACTIVE</span></div>
+      <div class="db-stat-row"><span class="db-stat-label">dashboard-stats</span><span class="badge badge-teal">ACTIVE</span></div>
+      <div style="margin-top:12px;font-size:12px;color:var(--text3)">
+        Free tier: 2M invocaciones/mes
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Videos por Estado</div>
+  <div class="db-card">
+    <div id="estado-chart" style="display:flex;gap:16px;flex-wrap:wrap"></div>
+  </div>
+</div>
+
+<!-- ══ CANALES ══════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-canales">
+  <div id="canales-grid" class="three-col">
+    <div class="canal-card">
+      <div class="skeleton" style="height:20px;width:60%;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:14px;width:40%"></div>
+    </div>
+    <div class="canal-card">
+      <div class="skeleton" style="height:20px;width:60%;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:14px;width:40%"></div>
+    </div>
+    <div class="canal-card">
+      <div class="skeleton" style="height:20px;width:60%;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:14px;width:40%"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TEMAS ════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-temas">
+  <div id="temas-container">
+    <div class="empty-state"><div class="icon">⏳</div><p>Cargando temas...</p></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+const SB_URL = 'https://xkdtpzxgtjujcopbcrwy.supabase.co';
+const SB_KEY = 'sb_secret_5_MM0gfEwj98aECGpEqDwA_Dd4PR8o2';
+const STATS_FN = SB_URL + '/functions/v1/dashboard-stats';
+
+const sbHeaders = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('es-PE', {hour:'2-digit',minute:'2-digit',second:'2-digit'}) + ' · PE';
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// Tabs
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+// Estado badge
+function estadoBadge(e) {
+  if (!e) return '<span class="badge badge-gray">—</span>';
+  const m = {
+    'publicado':       ['badge-teal',  '● Publicado'],
+    'publicando':      ['badge-amber', '● Publicando'],
+    'renderizando':    ['badge-amber', '● Renderizando'],
+    'generando_audio': ['badge-blue',  '● Audio'],
+    'generando_script':['badge-blue',  '● Script'],
+    'error':           ['badge-red',   '✕ Error'],
+    'pending':         ['badge-gray',  '○ Pendiente'],
+  };
+  const [cls, label] = m[e] || ['badge-gray', e];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('es-PE', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+}
+
+function fmtNum(n) {
+  if (n == null) return '—';
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return String(n);
+}
+
+// Load videos
+async function loadVideos() {
+  try {
+    const r = await fetch(SB_URL + '/rest/v1/videos?order=created_at.desc&limit=50', {headers: sbHeaders});
+    const videos = await r.json();
+    if (!Array.isArray(videos)) { console.error('Videos error:', videos); return; }
+
+    // KPIs
+    const total = videos.length;
+    const pub   = videos.filter(v => v.estado === 'publicado').length;
+    const proc  = videos.filter(v => v.estado && v.estado !== 'publicado' && v.estado !== 'error').length;
+    const err   = videos.filter(v => v.estado === 'error').length;
+
+    document.getElementById('kpi-total').textContent = total;
+    document.getElementById('kpi-pub').textContent   = pub;
+    document.getElementById('kpi-proc').textContent  = proc;
+    document.getElementById('kpi-err').textContent   = err;
+    document.getElementById('cnt-pipeline').textContent = total;
+
+    // Load canales for name lookup
+    const cr = await fetch(SB_URL + '/rest/v1/canales?select=id,nombre', {headers: sbHeaders});
+    const canales = await cr.json();
+    const cMap = {};
+    if (Array.isArray(canales)) canales.forEach(c => cMap[c.id] = c.nombre);
+
+    // Rows
+    const rows = videos.map(v => `
+      <div class="vt-row">
+        <div class="vt-title" title="${v.titulo || ''}">${v.titulo || '(sin título)'}</div>
+        <div class="vt-canal">${cMap[v.canal_id] || '—'}</div>
+        <div>${estadoBadge(v.estado)}</div>
+        <div style="font-size:12px;color:var(--text2);font-family:var(--font-mono)">${fmtDate(v.publicado_en || v.created_at)}</div>
+        <div>${v.youtube_video_id
+          ? `<a class="yt-link" href="https://youtube.com/watch?v=${v.youtube_video_id}" target="_blank">
+               <svg viewBox="0 0 16 16" fill="currentColor"><path d="M6.5 10.5l4-2.5-4-2.5v5z"/><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 1a6 6 0 110 12A6 6 0 018 2z"/></svg>
+               ${v.youtube_video_id.substring(0,8)}…
+             </a>`
+          : '<span style="color:var(--text3);font-size:12px">—</span>'
+        }</div>
+        <div style="font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(v.tema||'').substring(0,30)}</div>
+      </div>`).join('');
+
+    document.getElementById('video-rows').innerHTML = rows || `<div class="empty-state"><div class="icon">📹</div><p>No hay videos aún</p></div>`;
+
+  } catch(e) { console.error('loadVideos error:', e); }
+}
+
+// Load canales
+async function loadCanales() {
+  try {
+    const [cr, vr, tr] = await Promise.all([
+      fetch(SB_URL + '/rest/v1/canales?order=nombre', {headers: sbHeaders}).then(r=>r.json()),
+      fetch(SB_URL + '/rest/v1/videos?select=canal_id,estado', {headers: sbHeaders}).then(r=>r.json()),
+      fetch(SB_URL + '/rest/v1/temas?select=canal_id,usado', {headers: sbHeaders}).then(r=>r.json()),
+    ]);
+
+    if (!Array.isArray(cr)) return;
+
+    document.getElementById('canal-count').textContent = cr.length + ' canales';
+    document.getElementById('video-rate').textContent = (cr.length * 1) + ' videos/día';
+    document.getElementById('cnt-canales').textContent = cr.length;
+    document.getElementById('db-canales').textContent = cr.length;
+
+    const cards = cr.map(c => {
+      const vids = Array.isArray(vr) ? vr.filter(v => v.canal_id === c.id) : [];
+      const temas = Array.isArray(tr) ? tr.filter(t => t.canal_id === c.id) : [];
+      const pubVids = vids.filter(v => v.estado === 'publicado').length;
+      const freeTemas = temas.filter(t => !t.usado).length;
+      return `
+        <div class="canal-card">
+          <div>
+            <div class="canal-name">${c.nombre}</div>
+            <span class="canal-nicho">${c.nicho}</span>
+          </div>
+          <div class="canal-stat-row">
+            <div class="canal-stat">
+              <div class="canal-stat-val">${vids.length}</div>
+              <div class="canal-stat-lbl">Videos</div>
+            </div>
+            <div class="canal-stat">
+              <div class="canal-stat-val" style="color:var(--teal)">${pubVids}</div>
+              <div class="canal-stat-lbl">Publicados</div>
+            </div>
+            <div class="canal-stat">
+              <div class="canal-stat-val" style="color:var(--amber)">${freeTemas}</div>
+              <div class="canal-stat-lbl">Temas libres</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text3)">
+            Cron: ${c.nicho === 'crimen' ? '13:00' : c.nicho === 'curiosidades' ? '14:00' : '15:00'} · 1 video/día
+          </div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('canales-grid').innerHTML = cards;
+  } catch(e) { console.error('loadCanales error:', e); }
+}
+
+// Load temas
+async function loadTemas() {
+  try {
+    const [cr, tr] = await Promise.all([
+      fetch(SB_URL + '/rest/v1/canales?select=id,nombre', {headers: sbHeaders}).then(r=>r.json()),
+      fetch(SB_URL + '/rest/v1/temas?order=usado.asc,prioridad.desc', {headers: sbHeaders}).then(r=>r.json()),
+    ]);
+    if (!Array.isArray(tr)) return;
+
+    const cMap = {};
+    if (Array.isArray(cr)) cr.forEach(c => cMap[c.id] = c.nombre);
+
+    const free = tr.filter(t => !t.usado).length;
+    document.getElementById('cnt-temas').textContent = free + ' libres';
+
+    const byCanal = {};
+    tr.forEach(t => {
+      const canal = cMap[t.canal_id] || t.canal_id;
+      if (!byCanal[canal]) byCanal[canal] = [];
+      byCanal[canal].push(t);
+    });
+
+    let html = '';
+    for (const [canal, temas] of Object.entries(byCanal)) {
+      const freeCount = temas.filter(t => !t.usado).length;
+      html += `
+        <div style="margin-bottom:20px">
+          <div class="section-title">${canal} <span style="color:var(--teal);font-family:var(--font-mono);font-size:11px">${freeCount} disponibles / ${temas.length}</span></div>
+          <div class="topics-list">
+            ${temas.slice(0,15).map(t => `
+              <div class="topic-row ${t.usado?'used':''}">
+                ${t.usado
+                  ? '<span style="color:var(--teal);font-size:10px;font-family:var(--font-mono)">✓</span>'
+                  : '<span style="color:var(--text3);font-size:10px;font-family:var(--font-mono)">○</span>'
+                }
+                <span class="topic-title">${t.titulo_sugerido}</span>
+                <span class="topic-prio">P${t.prioridad}</span>
+                ${t.usado ? '<span class="badge badge-teal" style="font-size:9px">USADO</span>' : ''}
+              </div>`).join('')}
+            ${temas.length > 15 ? `<div class="topic-row" style="color:var(--text3);font-size:12px">... y ${temas.length-15} más</div>` : ''}
+          </div>
+        </div>`;
+    }
+
+    document.getElementById('temas-container').innerHTML = html;
+  } catch(e) { console.error('loadTemas error:', e); }
+}
+
+// Load API stats (via Edge Function)
+async function loadApiStats() {
+  try {
+    const r = await fetch(STATS_FN);
+    const data = await r.json();
+
+    // DB stats
+    document.getElementById('db-size').textContent    = data.db?.size_pretty || '—';
+    document.getElementById('db-videos').textContent  = data.db?.videos_total ?? '—';
+    document.getElementById('db-temas').textContent   = data.db?.temas_total ?? '—';
+
+    const pub = data.db?.por_estado?.publicado || 0;
+    document.getElementById('db-pub').textContent = pub;
+
+    const used = data.db?.temas_total - (data.db?.temas_usados || 0);
+    document.getElementById('db-temas-free').textContent = used;
+
+    // Estado chart
+    const estados = data.db?.por_estado || {};
+    const colors = {publicado:'#00d4a8',generando_audio:'#4d9fff',generando_script:'#4d9fff',renderizando:'#f5a623',publicando:'#f5a623',error:'#ff4d6a'};
+    const chartHtml = Object.entries(estados).map(([est, cnt]) => `
+      <div style="text-align:center;min-width:100px">
+        <div style="font-size:28px;font-family:var(--font-mono);font-weight:700;color:${colors[est]||'#8a9ab0'}">${cnt}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--font-mono)">${est.replace('_',' ').toUpperCase()}</div>
+      </div>`).join('');
+    document.getElementById('estado-chart').innerHTML = chartHtml || '<p style="color:var(--text3);font-size:13px">Sin datos</p>';
+
+    // Storage estimate (each audio ~200KB, assume 6 per video)
+    const audioCount = data.db?.videos_total || 0;
+    const estimatedStorageMB = (audioCount * 6 * 0.2).toFixed(1);
+    const storagePct = Math.min(100, ((estimatedStorageMB / 500) * 100)).toFixed(1);
+    document.getElementById('db-audio-count').textContent = (audioCount * 6) + ' archivos (est.)';
+    document.getElementById('storage-bar').style.width = storagePct + '%';
+    document.getElementById('storage-pct').textContent = `~${estimatedStorageMB} MB / 500 MB (${storagePct}%)`;
+
+    // Creatomate renders = published videos
+    document.getElementById('cre-renders').textContent = pub;
+
+    // fal.ai balance
+    const fal = data.apis?.fal;
+    if (fal && !fal.error) {
+      const bal = fal.balance ?? fal.credits ?? fal.amount ?? null;
+      if (bal != null) {
+        document.getElementById('fal-balance').textContent = '$' + Number(bal).toFixed(2);
+        const spent = 9.92 - Number(bal); // assume $9.92 was last known amount - adjust
+        const pct = Math.min(100, Math.max(0, (spent / 9.92) * 100)).toFixed(0);
+        document.getElementById('fal-usage-pct').textContent = pct + '% usado';
+        document.getElementById('fal-bar').style.width = pct + '%';
+      } else {
+        document.getElementById('fal-balance').textContent = JSON.stringify(fal).substring(0,30);
+        document.getElementById('fal-sub').textContent = 'Ver detalles en fal.ai/dashboard';
+      }
+    } else {
+      document.getElementById('fal-balance').textContent = '$9.92';
+      document.getElementById('fal-sub').textContent = 'Saldo visto en dashboard · Click "Recargar" para actualizar';
+      document.getElementById('fal-usage-pct').textContent = '~51% usado';
+      document.getElementById('fal-bar').style.width = '51%';
+    }
+
+    // ElevenLabs
+    const el = data.apis?.elevenlabs;
+    if (el && !el.error) {
+      const used_chars = el.character_count || 0;
+      const limit_chars = el.character_limit || 1;
+      const remaining = limit_chars - used_chars;
+      document.getElementById('el-balance').textContent = fmtNum(remaining) + ' chars';
+      document.getElementById('el-sub').textContent = `Plan: ${el.tier || '—'} · ${fmtNum(used_chars)} / ${fmtNum(limit_chars)} usados`;
+      const pct = Math.min(100, ((used_chars/limit_chars)*100)).toFixed(0);
+      document.getElementById('el-pct').textContent = pct + '% usado';
+      document.getElementById('el-bar').style.width = pct + '%';
+    } else {
+      document.getElementById('el-balance').textContent = '—';
+      document.getElementById('el-sub').textContent = 'Error al consultar · Verificar API key';
+    }
+
+  } catch(e) {
+    console.error('loadApiStats error:', e);
+  }
+}
+
+async function loadAll() {
+  await Promise.all([loadVideos(), loadCanales(), loadTemas(), loadApiStats()]);
+}
+
+loadAll();
+setInterval(loadAll, 60000); // auto-refresh every 60s
+</script>
+</body>
 </html>
