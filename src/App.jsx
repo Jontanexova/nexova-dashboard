@@ -696,32 +696,38 @@ function CrecimientoSection({ canales }) {
 
   const canalesFiltrados = canalFiltro === "todos" ? canales : canales.filter(c => c.id === canalFiltro);
 
-  // Construir datos del gráfico por canal
+  // Construir datos del gráfico — 1 punto por día usando el registro más reciente de cada día
   const buildChartData = (canal) => {
-    const cm = metricas.filter(m => m.canal_id === canal.id);
+    const cm = metricas.filter(m => m.canal_id === canal.id)
+      .sort((a, b) => new Date(a.fecha_consulta).getTime() - new Date(b.fecha_consulta).getTime());
     if (cm.length === 0) {
-      // Datos de ejemplo para mostrar el gráfico vacío
       const hoy = new Date();
       return Array.from({ length: 7 }, (_, i) => {
         const d = new Date(hoy); d.setDate(d.getDate() - (6 - i));
         return { fecha: d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" }), valor: 0 };
       });
     }
-    return cm.map(m => ({
-      fecha: new Date(m.fecha_consulta).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }),
-      valor: Number(m[metrica]) || 0,
-    }));
+    // Agrupar por día y tomar el último valor del día
+    const porDia = {};
+    cm.forEach(m => {
+      const fecha = new Date(m.fecha_consulta).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+      porDia[fecha] = Number(m[metrica]) || 0;
+    });
+    return Object.entries(porDia).map(([fecha, valor]) => ({ fecha, valor }));
   };
 
-  // Totales por canal
+  // Totales — usar SOLO el último registro por canal (el más reciente)
   const getTotales = (canal) => {
-    const cm = metricas.filter(m => m.canal_id === canal.id);
+    const cm = metricas.filter(m => m.canal_id === canal.id)
+      .sort((a, b) => new Date(b.fecha_consulta).getTime() - new Date(a.fecha_consulta).getTime());
+    const ultimo = cm[0]; // Solo el más reciente
+    if (!ultimo) return { likes: 0, suscriptores: 0, vistas: 0, comentarios: 0, ultFecha: "—" };
     return {
-      likes: cm.reduce((s, m) => s + (m.likes || 0), 0),
-      suscriptores: cm.reduce((s, m) => s + (m.suscriptores_ganados || 0), 0),
-      vistas: cm.reduce((s, m) => s + (m.vistas || 0), 0),
-      comentarios: cm.reduce((s, m) => s + (m.comentarios || 0), 0),
-      ultFecha: cm.length ? new Date(cm[cm.length-1].fecha_consulta).toLocaleDateString("es-PE") : "—",
+      likes: ultimo.likes || 0,
+      suscriptores: ultimo.suscriptores_ganados || 0,
+      vistas: ultimo.vistas || 0,
+      comentarios: ultimo.comentarios || 0,
+      ultFecha: new Date(ultimo.fecha_consulta).toLocaleDateString("es-PE"),
     };
   };
 
@@ -1033,8 +1039,7 @@ export default function Dashboard() {
   );
 }
 
-// build: 1776102867
 
-// build: 1776107019
 
-// build: 1776107562
+
+// build: 1776108684
