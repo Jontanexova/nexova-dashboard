@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const SUPABASE_URL = "https://xkdtpzxgtjujcopbcrwy.supabase.co";
-const SUPABASE_KEY = "sb_publishable_aXfbAJgR9pdsguLhJlvaqA_x3J1S1Xmb3OVVgfS";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhrZHRwenhndGp1amNvcGJjcnd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MzA1MDksImV4cCI6MjA5MTUwNjUwOX0.ldlwfTheYsdDhasipWZaz7jzd93KOP1pmZ87HCIFcDU";
 
 const CANAL_COLORS = {
   crimen:       { accent: "#e53e3e", glow: "#e53e3e40" },
@@ -785,3 +785,5 @@ export default function Dashboard() {
     </>
   );
 }
+
+// build: 1776102867
