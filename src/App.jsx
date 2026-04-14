@@ -805,7 +805,8 @@ function CrecimientoSection({ canales }) {
     { key: "comentarios",         label: "Comentarios",  color: "#e53e3e" },
   ];
 
-  const canalesFiltrados = canalFiltro === "todos" ? canales : canales.filter(c => c.id === canalFiltro);
+  const canalesPorPlataforma = canales.filter(c => c.plataforma === plataforma || (!c.plataforma && plataforma === "youtube"));
+  const canalesFiltrados = canalFiltro === "todos" ? canalesPorPlataforma : canalesPorPlataforma.filter(c => c.id === canalFiltro);
 
   // Construir datos del gráfico — 1 punto por día usando el registro más reciente de cada día
   const buildChartData = (canal) => {
@@ -849,7 +850,7 @@ function CrecimientoSection({ canales }) {
       {/* Selector plataforma */}
       <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
         {PLATAFORMAS_CRECIMIENTO.map(p => (
-          <button key={p.id} onClick={() => p.activo && setPlataforma(p.id)} style={{
+          <button key={p.id} onClick={() => { if (p.activo) { setPlataforma(p.id); setCanalFiltro("todos"); } }} style={{
             background: plataforma === p.id ? `${p.color}20` : "transparent",
             border: `1px solid ${plataforma === p.id ? p.color : "#1f2937"}`,
             borderRadius: 10, padding: "10px 20px", cursor: p.activo ? "pointer" : "not-allowed",
@@ -866,7 +867,7 @@ function CrecimientoSection({ canales }) {
         ))}
       </div>
 
-      {plataforma === "youtube" && (
+      {(plataforma === "youtube" || plataforma === "tiktok") && (
         <>
           {/* Controles */}
           <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap", alignItems: "center" }}>
@@ -878,7 +879,7 @@ function CrecimientoSection({ canales }) {
                 borderRadius: 20, padding: "6px 16px", cursor: "pointer",
                 color: canalFiltro === "todos" ? "#e5e7eb" : "#4b5563", fontSize: 12, fontFamily: "'DM Sans', sans-serif",
               }}>Todos los canales</button>
-              {canales.map(c => {
+              {canalesPorPlataforma.map(c => {
                 const col = CANAL_COLORS[c.nicho]?.accent || "#6b7280";
                 return (
                   <button key={c.id} onClick={() => setCanalFiltro(c.id)} style={{
@@ -992,16 +993,14 @@ function CrecimientoSection({ canales }) {
         </>
       )}
 
-      {plataforma !== "youtube" && (
+      {plataforma !== "youtube" && plataforma !== "tiktok" && (
         <div style={{ textAlign: "center", padding: "80px 20px", background: "#080808", borderRadius: 14, border: "1px solid #111" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>{PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.icon}</div>
           <div style={{ fontSize: 16, color: "#4b5563", marginBottom: 8, fontWeight: 600 }}>
-            {PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.label} — {PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.activo ? "Sin datos aún" : "Próximamente"}
+            {PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.label} — Próximamente
           </div>
           <div style={{ fontSize: 13, color: "#374151", maxWidth: 400, margin: "0 auto" }}>
-            {PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.activo
-              ? "Los datos de crecimiento aparecerán automáticamente cuando se publiquen videos y se registren métricas."
-              : "La integración con esta plataforma está en desarrollo."}
+            La integración con esta plataforma está en desarrollo.
           </div>
         </div>
       )}
