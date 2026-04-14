@@ -634,7 +634,7 @@ function TemaSection({ canales, temas, loading }) {
 
 // ===== EVOLUCIÓN =====
 function VideoRow({ video, expanded, onToggle }) {
-  const colores = { crimen: "#e53e3e", finanzas: "#38d9a9", curiosidades: "#a78bfa" };
+  const colores = { crimen: "#e53e3e", finanzas: "#38d9a9", curiosidades: "#a78bfa", guerras: "#f97316" };
   const color = colores[video.nicho] || "#6b7280";
   const fecha = new Date(video.publicado_en).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
   const chartData = [
@@ -1024,8 +1024,8 @@ export default function Dashboard() {
     try {
       const [c, v, t] = await Promise.all([
         supabaseQuery("canales", "?order=nicho"),
-        supabaseQuery("videos",  "?order=created_at.desc&limit=50"),
-        supabaseQuery("temas",   "?order=prioridad.desc&limit=200"),
+        supabaseQuery("videos",  "?order=created_at.desc&limit=500"),
+        supabaseQuery("temas",   "?order=prioridad.desc&limit=1000"),
       ]);
       setCanales(Array.isArray(c) ? c : []);
       setVideos(Array.isArray(v) ? v : []);
