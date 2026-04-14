@@ -1024,8 +1024,8 @@ export default function Dashboard() {
     try {
       const [c, v, t] = await Promise.all([
         supabaseQuery("canales", "?order=nicho"),
-        supabaseQuery("videos",  "?order=created_at.desc&limit=500"),
-        supabaseQuery("temas",   "?order=prioridad.desc&limit=1000"),
+        supabaseQuery("videos",  "?order=created_at.desc&limit=1000"),
+        supabaseQuery("temas",   "?order=prioridad.desc&limit=10000"),
       ]);
       setCanales(Array.isArray(c) ? c : []);
       setVideos(Array.isArray(v) ? v : []);
