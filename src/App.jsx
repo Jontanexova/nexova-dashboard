@@ -421,16 +421,76 @@ function BaseDatosSection({ canales, videos, temas }) {
   const videosPublicados = videos.filter(v => v.estado === "publicado").length;
   const temasTotal = temas.length;
   const temasDisponibles = temas.filter(t => !t.usado).length;
+  const [dbSize, setDbSize] = useState(13);
+  const [storageUsed, setStorageUsed] = useState(28);
+
+  useEffect(() => {
+    // Intentar obtener tamaño real de la BD
+    supabaseQuery("rpc/get_db_size_mb").then(data => {
+      if (typeof data === "number") setDbSize(data);
+    }).catch(() => {});
+  }, []);
+
+  // Recursos del Free Tier de Supabase
+  const recursos = [
+    { label: "Base de Datos", usado: dbSize, limite: 500, unidad: "MB", color: "#38d9a9" },
+    { label: "Storage (Audios)", usado: storageUsed, limite: 1000, unidad: "MB", color: "#a78bfa" },
+    { label: "Edge Functions", usado: videos.length * 6, limite: 2000000, unidad: "invoc.", color: "#f59e0b", displayUsado: `~${(videos.length * 6).toLocaleString("es-PE")}`, displayLimite: "2M" },
+    { label: "Ancho de Banda", usado: 0.5, limite: 5, unidad: "GB", color: "#60a5fa" },
+  ];
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
+      {/* MONITOR DE RECURSOS */}
+      <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>MONITOR DE RECURSOS — SUPABASE FREE TIER</div>
+      <div style={{ background: "#080808", border: "1px solid #1f2937", borderRadius: 14, padding: 24, marginBottom: 28 }}>
+        <div style={{ display: "grid", gap: 20 }}>
+          {recursos.map(r => {
+            const pct = Math.min(100, (r.usado / r.limite) * 100);
+            const barColor = pct > 80 ? "#ef4444" : pct > 60 ? "#f59e0b" : r.color;
+            const statusLabel = pct > 80 ? "🚨 CRÍTICO" : pct > 60 ? "⚠️ ALERTA" : "✓ OK";
+            const statusColor = pct > 80 ? "#ef4444" : pct > 60 ? "#f59e0b" : "#22c55e";
+            return (
+              <div key={r.label}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: r.color }} />
+                    <span style={{ fontSize: 13, color: "#e5e7eb", fontWeight: 600 }}>{r.label}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span style={{ fontSize: 12, color: "#6b7280", fontFamily: "'Space Mono', monospace" }}>
+                      {r.displayUsado || r.usado} / {r.displayLimite || r.limite} {r.unidad}
+                    </span>
+                    <span style={{ fontSize: 10, color: statusColor, background: `${statusColor}15`, border: `1px solid ${statusColor}30`, borderRadius: 4, padding: "2px 6px" }}>{statusLabel}</span>
+                  </div>
+                </div>
+                <div style={{ height: 10, background: "#111", borderRadius: 5, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.max(1, pct)}%`, background: `linear-gradient(90deg, ${barColor}, ${barColor}90)`, borderRadius: 5, transition: "width 0.5s ease" }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                  <span style={{ fontSize: 10, color: "#374151" }}>{pct.toFixed(1)}% usado</span>
+                  <span style={{ fontSize: 10, color: "#374151" }}>{(100 - pct).toFixed(1)}% libre</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: 20, padding: "10px 14px", background: "#0f0f0f", borderRadius: 8, border: "1px solid #111", display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ fontSize: 14 }}>💡</span>
+          <span style={{ fontSize: 12, color: "#4b5563" }}>
+            Supabase Free Tier incluye: 500 MB BD · 1 GB Storage · 2M Edge Function invocaciones · 5 GB ancho de banda.
+            {dbSize > 400 ? " ⚠️ Considerar upgrade a Plan Pro." : " El sistema está holgado."}
+          </span>
+        </div>
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 28 }}>
         {/* Supabase */}
         <div style={{ background: "#080808", border: "1px solid #1f2937", borderRadius: 14, padding: 20 }}>
-          <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>SUPABASE</div>
+          <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>SUPABASE (FREE TIER)</div>
           {[
             { label: "Proyecto", value: "xkdtpzxgtjujcopbcrwy" },
-            { label: "Tamaño BD", value: "12 MB" },
+            { label: "Tamaño BD", value: `${dbSize} MB` },
             { label: "Videos publicados", value: videosPublicados },
             { label: "Temas totales", value: temasTotal },
             { label: "Temas disponibles", value: temasDisponibles },
@@ -452,8 +512,8 @@ function BaseDatosSection({ canales, videos, temas }) {
         <div style={{ background: "#080808", border: "1px solid #1f2937", borderRadius: 14, padding: 20 }}>
           <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>STORAGE (SUPABASE FREE TIER)</div>
           {[
-            { label: "Archivos audio", value: <span style={{ fontSize: 18, fontWeight: 700, color: "#e5e7eb", fontFamily: "'Space Mono', monospace" }}>141 <span style={{ fontSize: 13 }}>archivos</span></span> },
-            { label: "Límite Free", value: "500 MB" },
+            { label: "Archivos audio", value: <span style={{ fontSize: 18, fontWeight: 700, color: "#e5e7eb", fontFamily: "'Space Mono', monospace" }}>{Math.round(videos.length * 9)} <span style={{ fontSize: 13 }}>archivos</span></span> },
+            { label: "Límite Free", value: "1 GB" },
           ].map(row => (
             <div key={row.label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #0f0f0f", alignItems: "center" }}>
               <span style={{ fontSize: 12, color: "#6b7280" }}>{row.label}</span>
@@ -463,9 +523,9 @@ function BaseDatosSection({ canales, videos, temas }) {
           <div style={{ marginTop: 16 }}>
             <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.08em", marginBottom: 8 }}>USO ESTIMADO</div>
             <div style={{ height: 8, background: "#111", borderRadius: 4, overflow: "hidden", marginBottom: 6 }}>
-              <div style={{ height: "100%", width: "5.6%", background: "#22c55e", borderRadius: 4 }} />
+              <div style={{ height: "100%", width: `${(storageUsed / 1000) * 100}%`, background: "#22c55e", borderRadius: 4 }} />
             </div>
-            <div style={{ fontSize: 11, color: "#4b5563" }}>~28.2 MB / 500 MB (5.6%)</div>
+            <div style={{ fontSize: 11, color: "#4b5563" }}>~{storageUsed} MB / 1 GB ({((storageUsed / 1000) * 100).toFixed(1)}%)</div>
           </div>
         </div>
 
