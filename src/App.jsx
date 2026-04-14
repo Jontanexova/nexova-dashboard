@@ -614,7 +614,7 @@ function TemaSection({ canales, temas, temasStats, loading }) {
             </div>
             {loading ? <div style={{ color: "#374151", fontSize: 12 }}>Cargando...</div>
               : ct.length === 0 ? <div style={{ color: "#374151", fontSize: 12, padding: "10px 0" }}>Sin temas disponibles</div>
-              : ct.slice(0, 20).map((tema, i) => (
+              : ct.slice(0, 10).map((tema, i) => (
                 <div key={tema.id || i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #0a0a0a" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#374151", display: "inline-block", flexShrink: 0 }} />
@@ -624,7 +624,7 @@ function TemaSection({ canales, temas, temasStats, loading }) {
                 </div>
               ))
             }
-            {stats.libres > 20 && <div style={{ fontSize: 12, color: "#374151", marginTop: 8 }}>… y {stats.libres - 20} más</div>}
+            {stats.libres > 10 && <div style={{ fontSize: 12, color: "#374151", marginTop: 8 }}>… y {stats.libres - 10} más</div>}
           </div>
         );
       })}
@@ -1026,7 +1026,7 @@ export default function Dashboard() {
       const [c, v, t, ts] = await Promise.all([
         supabaseQuery("canales", "?order=nicho"),
         supabaseQuery("videos",  "?order=created_at.desc&limit=1000"),
-        supabaseQuery("temas",   "?order=prioridad.desc&limit=10000"),
+        supabaseQuery("rpc/get_temas_preview", "?n=10"),
         supabaseQuery("rpc/get_temas_stats"),
       ]);
       setCanales(Array.isArray(c) ? c : []);
