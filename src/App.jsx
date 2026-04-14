@@ -50,7 +50,7 @@ const FUENTES = [
 const APIS_CONFIG = [
   { id: "anthropic",   label: "Anthropic",   abbr: "ANT", color: "#e53e3e", tipo: "credito",  consumoPorVideo: 0.01, unidad: "$", renovarUrl: "https://console.anthropic.com" },
   { id: "creatomate",  label: "Creatomate",  abbr: "CRE", color: "#38d9a9", tipo: "renders",  consumoPorVideo: 1,    unidad: "renders", renovarUrl: "https://creatomate.com" },
-  { id: "elevenlabs",  label: "ElevenLabs",  abbr: "11L", color: "#f59e0b", tipo: "chars",    consumoPorVideo: 2700, unidad: "chars", renovarUrl: "https://elevenlabs.io", auto: true },
+  { id: "elevenlabs",  label: "ElevenLabs",  abbr: "11L", color: "#f59e0b", tipo: "credito",  consumoPorVideo: 0.04, unidad: "$", renovarUrl: "https://elevenlabs.io", auto: false },
   { id: "falai",       label: "fal.ai",      abbr: "fal", color: "#a78bfa", tipo: "credito",  consumoPorVideo: 0.27, unidad: "$", renovarUrl: "https://fal.ai" },
   { id: "railway",     label: "Railway",     abbr: "RW",  color: "#6b7280", tipo: "credito",  consumoPorVideo: 0,    unidad: "$", renovarUrl: "https://railway.app", fijo: true },
 ];
@@ -221,7 +221,7 @@ function ApiCreditosSection({ videos }) {
     return Math.floor(vrest / 1).toLocaleString("es-PE");
   };
   const porcentaje = (api) => {
-    const maxSaldos = { anthropic: 50, creatomate: 10000, elevenlabs: 100000, falai: 50, railway: 10 };
+    const maxSaldos = { anthropic: 50, creatomate: 10000, elevenlabs: 30, falai: 50, railway: 10 };
     return Math.min(100, (saldos[api.id] / (maxSaldos[api.id] || 1)) * 100);
   };
 
@@ -232,7 +232,7 @@ function ApiCreditosSection({ videos }) {
         <div>
           <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 600, marginBottom: 4 }}>Los saldos se cargan desde Supabase y se descuentan automáticamente.</div>
           <div style={{ fontSize: 12, color: "#4b5563" }}>
-            Cada video descuenta: fal.ai $0.27 · Anthropic $0.01 · Creatomate 1 render · ElevenLabs ~2700 chars. <strong style={{ color: "#e5e7eb" }}>Click en el saldo para corregir manualmente (se guarda en Supabase).</strong>
+            Cada video descuenta: fal.ai $0.27 · ElevenLabs ~$0.04 · Anthropic $0.01 · Creatomate 1 render. <strong style={{ color: "#e5e7eb" }}>Click en el saldo para corregir manualmente (se guarda en Supabase).</strong>
           </div>
         </div>
       </div>
@@ -329,7 +329,7 @@ function ApiCreditosSection({ videos }) {
         </div>
         {[
           { nombre: "fal.ai (9 imágenes)", costo: "$0.27", mensual: "~$32.40", renovacion: "fal.ai $50 (~185 videos)", url: "https://fal.ai" },
-          { nombre: "ElevenLabs (~2700 chars)", costo: "~2,700 chars", mensual: "~324K chars", renovacion: "ElevenLabs", url: "https://elevenlabs.io" },
+          { nombre: "ElevenLabs API", costo: "~$0.04", mensual: "~$4.80", renovacion: "ElevenLabs", url: "https://elevenlabs.io" },
           { nombre: "Anthropic Claude", costo: "$0.01", mensual: "~$1.20", renovacion: "Anthropic", url: "https://console.anthropic.com" },
           { nombre: "Creatomate", costo: "1 render", mensual: "120 renders", renovacion: "Creatomate", url: "https://creatomate.com" },
           { nombre: "Railway (fijo)", costo: "—", mensual: "$5", renovacion: "Railway", url: "https://railway.app" },
