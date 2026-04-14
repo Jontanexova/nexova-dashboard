@@ -417,10 +417,10 @@ function HistorialSection({ videos }) {
 }
 
 // ===== BASE DE DATOS =====
-function BaseDatosSection({ canales, videos, temas }) {
+function BaseDatosSection({ canales, videos, temas, temasStats }) {
   const videosPublicados = videos.filter(v => v.estado === "publicado").length;
-  const temasTotal = temas.length;
-  const temasDisponibles = temas.filter(t => !t.usado).length;
+  const temasTotal = temasStats.reduce((sum, s) => sum + (s.total || 0), 0);
+  const temasDisponibles = temasStats.reduce((sum, s) => sum + (s.libres || 0), 0);
   const [dbSize, setDbSize] = useState(13);
   const [storageUsed, setStorageUsed] = useState(28);
 
@@ -561,7 +561,7 @@ function BaseDatosSection({ canales, videos, temas }) {
 }
 
 // ===== CANALES =====
-function CanalesSection({ canales, videos, temas }) {
+function CanalesSection({ canales, videos, temas, temasStats }) {
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
@@ -569,7 +569,7 @@ function CanalesSection({ canales, videos, temas }) {
           const col = CANAL_COLORS[canal.nicho] || CANAL_COLORS.curiosidades;
           const videosCanal = videos.filter(v => v.canal_id === canal.id);
           const publicados = videosCanal.filter(v => v.estado === "publicado").length;
-          const temasDisp = temas.filter(t => t.canal_id === canal.id && !t.usado).length;
+          const temasDisp = (temasStats.find(s => s.canal_id === canal.id) || {}).libres || 0;
           return (
             <div key={canal.id} style={{ background: "#080808", border: `1px solid ${col.accent}25`, borderRadius: 14, padding: 24 }}>
               <div style={{ marginBottom: 16 }}>
@@ -598,19 +598,19 @@ function CanalesSection({ canales, videos, temas }) {
 }
 
 // ===== TEMAS =====
-function TemaSection({ canales, temas, loading }) {
+function TemaSection({ canales, temas, temasStats, loading }) {
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
       {canales.map(canal => {
         const col = CANAL_COLORS[canal.nicho] || CANAL_COLORS.curiosidades;
+        const stats = temasStats.find(s => s.canal_id === canal.id) || { libres: 0, total: 0 };
         const ct = temas.filter(t => t.canal_id === canal.id && !t.usado);
-        const total = temas.filter(t => t.canal_id === canal.id).length;
         return (
           <div key={canal.id} style={{ marginBottom: 32 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
               <span style={{ fontSize: 11, color: col.accent, fontWeight: 700, letterSpacing: "0.1em" }}>{canal.nombre.toUpperCase()}</span>
-              <span style={{ fontSize: 11, color: "#22c55e" }}>{ct.length} DISPONIBLES</span>
-              <span style={{ fontSize: 11, color: "#374151" }}>/ {total}</span>
+              <span style={{ fontSize: 11, color: "#22c55e" }}>{stats.libres} DISPONIBLES</span>
+              <span style={{ fontSize: 11, color: "#374151" }}>/ {stats.total}</span>
             </div>
             {loading ? <div style={{ color: "#374151", fontSize: 12 }}>Cargando...</div>
               : ct.length === 0 ? <div style={{ color: "#374151", fontSize: 12, padding: "10px 0" }}>Sin temas disponibles</div>
@@ -624,7 +624,7 @@ function TemaSection({ canales, temas, loading }) {
                 </div>
               ))
             }
-            {ct.length > 20 && <div style={{ fontSize: 12, color: "#374151", marginTop: 8 }}>… y {ct.length - 20} más</div>}
+            {stats.libres > 20 && <div style={{ fontSize: 12, color: "#374151", marginTop: 8 }}>… y {stats.libres - 20} más</div>}
           </div>
         );
       })}
@@ -1014,6 +1014,7 @@ export default function Dashboard() {
   const [canales, setCanales] = useState([]);
   const [videos, setVideos]   = useState([]);
   const [temas, setTemas]     = useState([]);
+  const [temasStats, setTemasStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [activeTab, setActiveTab]   = useState("pipeline");
@@ -1022,14 +1023,16 @@ export default function Dashboard() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [c, v, t] = await Promise.all([
+      const [c, v, t, ts] = await Promise.all([
         supabaseQuery("canales", "?order=nicho"),
         supabaseQuery("videos",  "?order=created_at.desc&limit=1000"),
         supabaseQuery("temas",   "?order=prioridad.desc&limit=10000"),
+        supabaseQuery("rpc/get_temas_stats"),
       ]);
       setCanales(Array.isArray(c) ? c : []);
       setVideos(Array.isArray(v) ? v : []);
       setTemas(Array.isArray(t) ? t : []);
+      setTemasStats(Array.isArray(ts) ? ts : []);
       setLastUpdate(new Date());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -1056,7 +1059,7 @@ export default function Dashboard() {
   }, [fetchData, syncYoutube]);
 
   const videosPublicados = videos.filter(v => v.estado === "publicado").length;
-  const temasLibres = temas.filter(t => !t.usado).length;
+  const temasLibres = temasStats.reduce((sum, s) => sum + (s.libres || 0), 0);
 
   const TABS = [
     { id: "pipeline",   label: "Pipeline",       badge: videos.length, badgeColor: "#38d9a9" },
@@ -1132,9 +1135,9 @@ export default function Dashboard() {
           {activeTab === "pipeline"  && <PipelineSection canales={canales} videos={videos} loading={loading} />}
           {activeTab === "apis"      && <ApiCreditosSection videos={videos} />}
           {activeTab === "historial" && <HistorialSection videos={videos} />}
-          {activeTab === "basedatos" && <BaseDatosSection canales={canales} videos={videos} temas={temas} />}
-          {activeTab === "canales"   && <CanalesSection canales={canales} videos={videos} temas={temas} />}
-          {activeTab === "temas"     && <TemaSection canales={canales} temas={temas} loading={loading} />}
+          {activeTab === "basedatos" && <BaseDatosSection canales={canales} videos={videos} temas={temas} temasStats={temasStats} />}
+          {activeTab === "canales"   && <CanalesSection canales={canales} videos={videos} temas={temas} temasStats={temasStats} />}
+          {activeTab === "temas"     && <TemaSection canales={canales} temas={temas} temasStats={temasStats} loading={loading} />}
           {activeTab === "evolucion" && <EvolucionSection canales={canales} videos={videos} />}
           {activeTab === "crecimiento" && <CrecimientoSection canales={canales} />}
         </div>
