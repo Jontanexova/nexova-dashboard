@@ -8,12 +8,14 @@ const CANAL_COLORS = {
   crimen:       { accent: "#e53e3e", glow: "#e53e3e40" },
   finanzas:     { accent: "#38d9a9", glow: "#38d9a940" },
   curiosidades: { accent: "#a78bfa", glow: "#a78bfa40" },
+  guerras:      { accent: "#f97316", glow: "#f9731640" },
 };
 
 const CANAL_CHART_COLORS = {
   "Archivo Siniestro": "#e53e3e",
   "Dinero Consciente": "#38d9a9",
   "Mente Inquieta":    "#a78bfa",
+  "Historias Gráficas": "#f97316",
 };
 
 const ESTADO_CONFIG = {
@@ -40,7 +42,7 @@ const METRICAS_CONFIG = [
 
 const FUENTES = [
   { id: "youtube",   label: "YouTube",   activo: true,  icon: "▶" },
-  { id: "tiktok",    label: "TikTok",    activo: false, icon: "♪" },
+  { id: "tiktok",    label: "TikTok",    activo: true,  icon: "♪" },
   { id: "facebook",  label: "Facebook",  activo: false, icon: "f" },
   { id: "instagram", label: "Instagram", activo: false, icon: "◉" },
 ];
@@ -48,8 +50,8 @@ const FUENTES = [
 const APIS_CONFIG = [
   { id: "anthropic",   label: "Anthropic",   abbr: "ANT", color: "#e53e3e", tipo: "credito",  consumoPorVideo: 0.01, unidad: "$", renovarUrl: "https://console.anthropic.com" },
   { id: "creatomate",  label: "Creatomate",  abbr: "CRE", color: "#38d9a9", tipo: "renders",  consumoPorVideo: 1,    unidad: "renders", renovarUrl: "https://creatomate.com" },
-  { id: "elevenlabs",  label: "ElevenLabs",  abbr: "11L", color: "#f59e0b", tipo: "chars",    consumoPorVideo: 1800, unidad: "chars", renovarUrl: "https://elevenlabs.io", auto: true },
-  { id: "falai",       label: "fal.ai",      abbr: "fal", color: "#a78bfa", tipo: "credito",  consumoPorVideo: 1.20, unidad: "$", renovarUrl: "https://fal.ai" },
+  { id: "elevenlabs",  label: "ElevenLabs",  abbr: "11L", color: "#f59e0b", tipo: "chars",    consumoPorVideo: 2700, unidad: "chars", renovarUrl: "https://elevenlabs.io", auto: true },
+  { id: "falai",       label: "fal.ai",      abbr: "fal", color: "#a78bfa", tipo: "credito",  consumoPorVideo: 0.27, unidad: "$", renovarUrl: "https://fal.ai" },
   { id: "railway",     label: "Railway",     abbr: "RW",  color: "#6b7280", tipo: "credito",  consumoPorVideo: 0,    unidad: "$", renovarUrl: "https://railway.app", fijo: true },
 ];
 
@@ -112,12 +114,11 @@ function PipelineSection({ canales, videos, loading }) {
   const videosF = canalFiltro === "todos" ? videos : videos.filter(v => v.canal_id === canalFiltro);
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
         {[
           { label: "TOTAL VIDEOS", value: videos.length, color: "#6b7280", sub: "generados" },
-          { label: "PUBLICADOS", value: videos.filter(v => v.estado === "publicado").length, color: "#22c55e", sub: "en YouTube" },
+          { label: "PUBLICADOS", value: videos.filter(v => v.estado === "publicado").length, color: "#22c55e", sub: `${videos.filter(v => v.estado === "publicado" && v.plataforma !== "tiktok").length} YouTube · ${videos.filter(v => v.estado === "publicado" && v.plataforma === "tiktok").length} TikTok` },
           { label: "EN PROCESO", value: videos.filter(v => !["publicado","error","pendiente"].includes(v.estado)).length, color: "#f59e0b", sub: "ahora mismo" },
-          { label: "ERRORES", value: videos.filter(v => v.estado === "error").length, color: "#ef4444", sub: "requieren atención" },
         ].map(s => (
           <div key={s.label} style={{ background: "#080808", border: `1px solid ${s.color}20`, borderRadius: 12, padding: "20px 24px" }}>
             <div style={{ fontSize: 10, color: "#4b5563", letterSpacing: "0.12em", marginBottom: 10 }}>{s.label}</div>
@@ -136,7 +137,7 @@ function PipelineSection({ canales, videos, loading }) {
       <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 12 }}>VIDEOS RECIENTES</div>
       <div style={{ background: "#080808", borderRadius: 12, border: "1px solid #111", overflow: "hidden" }}>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1.5fr", padding: "10px 20px", borderBottom: "1px solid #111" }}>
-          {["TÍTULO","CANAL","ESTADO","FECHA","YOUTUBE","TEMA"].map(h => (
+          {["TÍTULO","CANAL","ESTADO","FECHA","URL","TEMA"].map(h => (
             <span key={h} style={{ fontSize: 10, color: "#374151", letterSpacing: "0.08em" }}>{h}</span>
           ))}
         </div>
@@ -162,6 +163,8 @@ function PipelineSection({ canales, videos, loading }) {
               <span>
                 {v.youtube_video_id ? (
                   <a href={v.youtube_url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#e53e3e", textDecoration: "none" }}>▶ {v.youtube_video_id.slice(0,8)}…</a>
+                ) : v.tiktok_publish_id ? (
+                  <span style={{ fontSize: 11, color: "#f97316" }}>♪ TikTok</span>
                 ) : "—"}
               </span>
               <span style={{ fontSize: 11, color: "#4b5563", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v.titulo_tema || v.tema || "—"}</span>
@@ -177,14 +180,34 @@ function PipelineSection({ canales, videos, loading }) {
 function ApiCreditosSection({ videos }) {
   const videosPublicados = videos.filter(v => v.estado === "publicado").length;
   const [saldos, setSaldos] = useState({
-    anthropic: 27.04, creatomate: 9100, elevenlabs: 58700, falai: 43.87, railway: 5.00
+    anthropic: 0, creatomate: 0, elevenlabs: 0, falai: 0, railway: 5.00
   });
   const [editando, setEditando] = useState(null);
   const [inputVal, setInputVal] = useState("");
 
+  useEffect(() => {
+    supabaseQuery("api_credits", "?select=api_name,balance").then(data => {
+      if (Array.isArray(data)) {
+        const map = {};
+        data.forEach(r => {
+          const key = r.api_name === "fal_ai" ? "falai" : r.api_name;
+          map[key] = parseFloat(r.balance) || 0;
+        });
+        setSaldos(s => ({ ...s, ...map }));
+      }
+    });
+  }, []);
+
   const iniciarEdicion = (id, valor) => { setEditando(id); setInputVal(String(valor)); };
   const guardarEdicion = (id) => {
-    setSaldos(s => ({ ...s, [id]: parseFloat(inputVal) || 0 }));
+    const newVal = parseFloat(inputVal) || 0;
+    setSaldos(s => ({ ...s, [id]: newVal }));
+    const apiName = id === "falai" ? "fal_ai" : id;
+    fetch(`${SUPABASE_URL}/rest/v1/api_credits?api_name=eq.${apiName}`, {
+      method: "PATCH",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ balance: newVal, updated_at: new Date().toISOString() })
+    });
     setEditando(null);
   };
 
@@ -207,9 +230,9 @@ function ApiCreditosSection({ videos }) {
       <div style={{ background: "#0a0a0a", border: "1px solid #1f2937", borderRadius: 10, padding: "12px 16px", marginBottom: 24, display: "flex", gap: 8, alignItems: "flex-start" }}>
         <span style={{ fontSize: 16 }}>🔔</span>
         <div>
-          <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 600, marginBottom: 4 }}>Los saldos se guardan en Supabase y se descuentan automáticamente.</div>
+          <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 600, marginBottom: 4 }}>Los saldos se cargan desde Supabase y se descuentan automáticamente.</div>
           <div style={{ fontSize: 12, color: "#4b5563" }}>
-            Cada video publicado descuenta: fal.ai $1.20 · Anthropic $0.01 · Creatomate 1 render. APIs con <span style={{ background: "#22c55e20", color: "#22c55e", border: "1px solid #22c55e30", borderRadius: 4, padding: "1px 5px", fontSize: 10 }}>AUTO</span> se actualizan solas vía API. <strong style={{ color: "#e5e7eb" }}>Click en el saldo para ingresar/corregir el valor actual.</strong>
+            Cada video descuenta: fal.ai $0.27 · Anthropic $0.01 · Creatomate 1 render · ElevenLabs ~2700 chars. <strong style={{ color: "#e5e7eb" }}>Click en el saldo para corregir manualmente (se guarda en Supabase).</strong>
           </div>
         </div>
       </div>
@@ -293,22 +316,22 @@ function ApiCreditosSection({ videos }) {
       </div>
 
       {/* Estimador */}
-      <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>ESTIMADOR MENSUAL (3 CANALES × 1 VID/DÍA = 90 VIDEOS/MES)</div>
+      <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>ESTIMADOR MENSUAL (4 CANALES × 1 VID/DÍA = 120 VIDEOS/MES)</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0, background: "#080808", borderRadius: 12, border: "1px solid #111", overflow: "hidden" }}>
         <div style={{ padding: "10px 20px", borderBottom: "1px solid #111", borderRight: "1px solid #111" }}>
           <span style={{ fontSize: 10, color: "#374151", letterSpacing: "0.08em" }}>COSTO POR VIDEO</span>
         </div>
         <div style={{ padding: "10px 20px", borderBottom: "1px solid #111", borderRight: "1px solid #111" }}>
-          <span style={{ fontSize: 10, color: "#374151", letterSpacing: "0.08em" }}>MENSUAL (90 VIDEOS)</span>
+          <span style={{ fontSize: 10, color: "#374151", letterSpacing: "0.08em" }}>MENSUAL (120 VIDEOS)</span>
         </div>
         <div style={{ padding: "10px 20px", borderBottom: "1px solid #111" }}>
           <span style={{ fontSize: 10, color: "#374151", letterSpacing: "0.08em" }}>RENOVACIONES</span>
         </div>
         {[
-          { nombre: "fal.ai (6 clips)", costo: "$1.20", mensual: "~$108", renovacion: "fal.ai $50 (~41 videos)", url: "https://fal.ai" },
-          { nombre: "ElevenLabs (~1800 chars)", costo: "~1,800 chars", mensual: "~162K chars", renovacion: "ElevenLabs", url: "https://elevenlabs.io" },
-          { nombre: "Anthropic Claude", costo: "$0.01", mensual: "~$0.90", renovacion: "Anthropic", url: "https://console.anthropic.com" },
-          { nombre: "Creatomate", costo: "1 render", mensual: "90 renders", renovacion: "Creatomate", url: "https://creatomate.com" },
+          { nombre: "fal.ai (9 imágenes)", costo: "$0.27", mensual: "~$32.40", renovacion: "fal.ai $50 (~185 videos)", url: "https://fal.ai" },
+          { nombre: "ElevenLabs (~2700 chars)", costo: "~2,700 chars", mensual: "~324K chars", renovacion: "ElevenLabs", url: "https://elevenlabs.io" },
+          { nombre: "Anthropic Claude", costo: "$0.01", mensual: "~$1.20", renovacion: "Anthropic", url: "https://console.anthropic.com" },
+          { nombre: "Creatomate", costo: "1 render", mensual: "120 renders", renovacion: "Creatomate", url: "https://creatomate.com" },
           { nombre: "Railway (fijo)", costo: "—", mensual: "$5", renovacion: "Railway", url: "https://railway.app" },
         ].map((row, i) => (
           <div key={i} style={{ display: "contents" }}>
@@ -331,7 +354,7 @@ function ApiCreditosSection({ videos }) {
 
 // ===== HISTORIAL =====
 function HistorialSection({ videos }) {
-  const consumoPorVideo = { falai: 1.20, anthropic: 0.01, creatomate: 1 };
+  const consumoPorVideo = { falai: 0.27, anthropic: 0.01, creatomate: 1 };
   const publicados = videos.filter(v => v.estado === "publicado");
   const totalFalai = publicados.length * consumoPorVideo.falai;
   const totalAnthropic = publicados.length * consumoPorVideo.anthropic;
@@ -372,7 +395,7 @@ function HistorialSection({ videos }) {
         {publicados.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 0", color: "#374151", fontSize: 13 }}>Sin transacciones aún</div>
         ) : publicados.slice(0, 20).flatMap((v, i) => [
-          { api: "fal", label: "fal.ai", color: "#a78bfa", tipo: "consumo", monto: "-$1.20", desc: `Video publicado: ${v.titulo?.slice(0,50)}`, fecha: v.publicado_en },
+          { api: "fal", label: "fal.ai", color: "#a78bfa", tipo: "consumo", monto: "-$0.27", desc: `Video publicado: ${v.titulo?.slice(0,50)}`, fecha: v.publicado_en },
           { api: "ANT", label: "Anthropic", color: "#e53e3e", tipo: "consumo", monto: "-$0.01", desc: `Video publicado: ${v.titulo?.slice(0,50)}`, fecha: v.publicado_en },
           { api: "CRE", label: "Creatomate", color: "#38d9a9", tipo: "consumo", monto: "-1 renders", desc: `Video publicado: ${v.titulo?.slice(0,50)}`, fecha: v.publicado_en },
         ]).slice(0, 20).map((t, i) => (
@@ -427,7 +450,7 @@ function BaseDatosSection({ canales, videos, temas }) {
 
         {/* Storage */}
         <div style={{ background: "#080808", border: "1px solid #1f2937", borderRadius: 14, padding: 20 }}>
-          <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>STORAGE</div>
+          <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>STORAGE (SUPABASE FREE TIER)</div>
           {[
             { label: "Archivos audio", value: <span style={{ fontSize: 18, fontWeight: 700, color: "#e5e7eb", fontFamily: "'Space Mono', monospace" }}>141 <span style={{ fontSize: 13 }}>archivos</span></span> },
             { label: "Límite Free", value: "500 MB" },
@@ -449,7 +472,7 @@ function BaseDatosSection({ canales, videos, temas }) {
         {/* Edge Functions */}
         <div style={{ background: "#080808", border: "1px solid #1f2937", borderRadius: 14, padding: 20 }}>
           <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.1em", marginBottom: 16 }}>EDGE FUNCTIONS</div>
-          {["upload-to-youtube","upload-audio","generate-wan-video","dashboard-stats"].map(fn => (
+          {["upload-to-youtube","upload-to-tiktok","upload-audio","generate-wan-video","dashboard-stats"].map(fn => (
             <div key={fn} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #0f0f0f", alignItems: "center" }}>
               <span style={{ fontSize: 12, color: "#9ca3af" }}>{fn}</span>
               <span style={{ fontSize: 10, background: "#22c55e20", color: "#22c55e", border: "1px solid #22c55e30", borderRadius: 4, padding: "2px 6px" }}>ACTIVE</span>
@@ -604,16 +627,17 @@ function EvolucionSection({ canales, videos }) {
         const canal = canales.find(c => c.id === v.canal_id);
         const metricasVideo = (Array.isArray(metricas) ? metricas : []).filter(m => m.video_id === v.id);
         const ultima = metricasVideo[metricasVideo.length - 1];
-        return { ...v, canal: canal?.nombre || "—", nicho: canal?.nicho || "curiosidades", vistas: ultima?.vistas || 0, likes: ultima?.likes || 0 };
+        return { ...v, canal: canal?.nombre || "—", nicho: canal?.nicho || "curiosidades", plataforma: v.plataforma || "youtube", vistas: ultima?.vistas || 0, likes: ultima?.likes || 0 };
       });
       setVideosConDatos(vids);
       setLoading(false);
     });
   }, [videos, canales]);
 
-  const coloresCanal = { crimen: "#e53e3e", finanzas: "#38d9a9", curiosidades: "#a78bfa" };
+  const coloresCanal = { crimen: "#e53e3e", finanzas: "#38d9a9", curiosidades: "#a78bfa", guerras: "#f97316" };
   const canalesUnicos = [...new Set(videosConDatos.map(v => v.canal))];
-  const videosFiltrados = canalFiltro === "todos" ? videosConDatos : videosConDatos.filter(v => v.canal === canalFiltro);
+  const ytVideos = videosConDatos.filter(v => v.plataforma !== "tiktok");
+  const videosFiltrados = canalFiltro === "todos" ? ytVideos : ytVideos.filter(v => v.canal === canalFiltro);
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
@@ -631,9 +655,9 @@ function EvolucionSection({ canales, videos }) {
         <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
             {[
-              { label: "Videos publicados", value: videosConDatos.length, color: "#6b7280" },
-              { label: "Vistas totales", value: videosConDatos.reduce((s, v) => s + (v.vistas || 0), 0).toLocaleString("es-PE"), color: "#38d9a9" },
-              { label: "Likes totales", value: videosConDatos.reduce((s, v) => s + (v.likes || 0), 0).toLocaleString("es-PE"), color: "#f59e0b" },
+              { label: "Videos publicados", value: ytVideos.length, color: "#6b7280" },
+              { label: "Vistas totales", value: ytVideos.reduce((s, v) => s + (v.vistas || 0), 0).toLocaleString("es-PE"), color: "#38d9a9" },
+              { label: "Likes totales", value: ytVideos.reduce((s, v) => s + (v.likes || 0), 0).toLocaleString("es-PE"), color: "#f59e0b" },
             ].map(s => (
               <div key={s.label} style={{ background: "#0f0f0f", border: `1px solid ${s.color}25`, borderRadius: 10, padding: "14px 18px" }}>
                 <div style={{ fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>{s.label}</div>
@@ -655,7 +679,34 @@ function EvolucionSection({ canales, videos }) {
           }
         </>
       )}
-      {fuente !== "youtube" && (
+      {fuente === "tiktok" && (
+        <>
+          {(() => {
+            const tiktokVids = videosConDatos.filter(v => v.plataforma === "tiktok");
+            const tiktokFiltrados = canalFiltro === "todos" ? tiktokVids : tiktokVids.filter(v => v.canal === canalFiltro);
+            return (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
+                  {[
+                    { label: "Videos publicados", value: tiktokVids.length, color: "#6b7280" },
+                    { label: "Vistas totales", value: tiktokVids.reduce((s, v) => s + (v.vistas || 0), 0).toLocaleString("es-PE"), color: "#38d9a9" },
+                    { label: "Likes totales", value: tiktokVids.reduce((s, v) => s + (v.likes || 0), 0).toLocaleString("es-PE"), color: "#f59e0b" },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: "#0f0f0f", border: `1px solid ${s.color}25`, borderRadius: 10, padding: "14px 18px" }}>
+                      <div style={{ fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>{s.label}</div>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: s.color, fontFamily: "'Space Mono', monospace" }}>{s.value}</div>
+                    </div>
+                  ))}
+                </div>
+                {tiktokFiltrados.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "40px 0", color: "#374151", fontSize: 13 }}>Sin publicaciones TikTok aún</div>
+                ) : tiktokFiltrados.map(video => <VideoRow key={video.id} video={video} expanded={expandedId === video.id} onToggle={() => setExpandedId(expandedId === video.id ? null : video.id)} />)}
+              </>
+            );
+          })()}
+        </>
+      )}
+      {fuente !== "youtube" && fuente !== "tiktok" && (
         <div style={{ textAlign: "center", padding: "60px 20px", background: "#080808", borderRadius: 14, border: "1px solid #111" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>{FUENTES.find(f => f.id === fuente)?.icon}</div>
           <div style={{ fontSize: 15, color: "#4b5563", marginBottom: 8 }}>{FUENTES.find(f => f.id === fuente)?.label} — Próximamente</div>
@@ -670,7 +721,7 @@ function EvolucionSection({ canales, videos }) {
 // ===== PESTAÑA CRECIMIENTO =====
 const PLATAFORMAS_CRECIMIENTO = [
   { id: "youtube",   label: "YouTube",   activo: true,  color: "#e53e3e", icon: "▶" },
-  { id: "tiktok",    label: "TikTok",    activo: false, color: "#a78bfa", icon: "♪" },
+  { id: "tiktok",    label: "TikTok",    activo: true,  color: "#a78bfa", icon: "♪" },
   { id: "instagram", label: "Instagram", activo: false, color: "#f59e0b", icon: "◉" },
   { id: "facebook",  label: "Facebook",  activo: false, color: "#38d9a9", icon: "f" },
 ];
@@ -885,10 +936,12 @@ function CrecimientoSection({ canales }) {
         <div style={{ textAlign: "center", padding: "80px 20px", background: "#080808", borderRadius: 14, border: "1px solid #111" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>{PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.icon}</div>
           <div style={{ fontSize: 16, color: "#4b5563", marginBottom: 8, fontWeight: 600 }}>
-            {PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.label} — Próximamente
+            {PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.label} — {PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.activo ? "Sin datos aún" : "Próximamente"}
           </div>
           <div style={{ fontSize: 13, color: "#374151", maxWidth: 400, margin: "0 auto" }}>
-            La integración con esta plataforma está en desarrollo. Cuando esté lista, verás aquí la evolución de likes y seguidores en el tiempo.
+            {PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.activo
+              ? "Los datos de crecimiento aparecerán automáticamente cuando se publiquen videos y se registren métricas."
+              : "La integración con esta plataforma está en desarrollo."}
           </div>
         </div>
       )}
@@ -1008,9 +1061,9 @@ export default function Dashboard() {
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px #22c55e", animation: "ping 2.5s ease-in-out infinite" }} />
-              <span style={{ fontSize: 12, color: "#6b7280" }}>3 canales</span>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>4 canales</span>
             </div>
-            <span style={{ fontSize: 12, color: "#4b5563" }}>3 videos/día</span>
+            <span style={{ fontSize: 12, color: "#4b5563" }}>4 videos/día</span>
             {lastUpdate && <span style={{ fontSize: 11, color: "#374151", fontFamily: "'Space Mono', monospace" }}>{lastUpdate.toLocaleTimeString("es-PE")}</span>}
             <button onClick={syncYoutube} disabled={syncing} style={{ background: syncing ? "#1f2937" : "transparent", border: "1px solid #1f2937", borderRadius: 8, padding: "6px 14px", color: syncing ? "#38d9a9" : "#6b7280", cursor: syncing ? "default" : "pointer", fontSize: 12, fontFamily: "'DM Sans', sans-serif", transition: "all 0.2s" }}>{syncing ? "⟳ Sincronizando..." : "↻ Actualizar"}</button>
           </div>
@@ -1032,7 +1085,7 @@ export default function Dashboard() {
             <span style={{ fontSize: 12, color: "#374151" }}>Powered by</span>
             <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, background: "linear-gradient(90deg, #38d9a9, #a78bfa, #38d9a9)", backgroundSize: "200% auto", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", animation: "shimmer 3s linear infinite" }}>NEXOVA</span>
           </div>
-          <span style={{ fontSize: 11, color: "#1f2937", fontFamily: "'Space Mono', monospace" }}>youtube-autopublish · Lima, Perú</span>
+          <span style={{ fontSize: 11, color: "#1f2937", fontFamily: "'Space Mono', monospace" }}>autopublish · YouTube · TikTok · Lima, Perú</span>
         </div>
       </div>
     </>
@@ -1042,4 +1095,4 @@ export default function Dashboard() {
 
 
 
-// build: 1776108684
+// build: 1776146000 — v2 con TikTok, guerras, saldos Supabase
