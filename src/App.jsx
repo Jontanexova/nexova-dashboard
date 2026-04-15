@@ -10,6 +10,7 @@ const CANAL_COLORS = {
   curiosidades: { accent: "#a78bfa", glow: "#a78bfa40" },
   guerras:      { accent: "#f97316", glow: "#f9731640" },
   historia_peru:{ accent: "#eab308", glow: "#eab30840" },
+  biografias:   { accent: "#ec4899", glow: "#ec489940" },
 };
 
 const CANAL_CHART_COLORS = {
@@ -18,6 +19,7 @@ const CANAL_CHART_COLORS = {
   "Mente Inquieta":    "#a78bfa",
   "Historias Gráficas": "#f97316",
   "Oráculo Virtual":   "#eab308",
+  "Vidas Épicas":      "#ec4899",
 };
 
 const ESTADO_CONFIG = {
@@ -46,7 +48,7 @@ const FUENTES = [
   { id: "youtube",   label: "YouTube",   activo: true,  icon: "▶" },
   { id: "tiktok",    label: "TikTok",    activo: true,  icon: "♪" },
   { id: "facebook",  label: "Facebook",  activo: true,  icon: "f" },
-  { id: "instagram", label: "Instagram", activo: false, icon: "◉" },
+  { id: "instagram", label: "Instagram", activo: true,  icon: "◉" },
 ];
 
 const APIS_CONFIG = [
@@ -119,7 +121,7 @@ function PipelineSection({ canales, videos, loading }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
         {[
           { label: "TOTAL VIDEOS", value: videos.length, color: "#6b7280", sub: "generados" },
-          { label: "PUBLICADOS", value: videos.filter(v => v.estado === "publicado").length, color: "#22c55e", sub: `${videos.filter(v => v.estado === "publicado" && v.plataforma !== "tiktok" && v.plataforma !== "facebook").length} YouTube · ${videos.filter(v => v.estado === "publicado" && v.plataforma === "tiktok").length} TikTok · ${videos.filter(v => v.estado === "publicado" && v.plataforma === "facebook").length} Facebook` },
+          { label: "PUBLICADOS", value: videos.filter(v => v.estado === "publicado").length, color: "#22c55e", sub: `${videos.filter(v => v.estado === "publicado" && v.plataforma !== "tiktok" && v.plataforma !== "facebook" && v.plataforma !== "instagram").length} YT · ${videos.filter(v => v.estado === "publicado" && v.plataforma === "tiktok").length} TK · ${videos.filter(v => v.estado === "publicado" && v.plataforma === "facebook").length} FB · ${videos.filter(v => v.estado === "publicado" && v.plataforma === "instagram").length} IG` },
           { label: "EN PROCESO", value: videos.filter(v => !["publicado","error","pendiente"].includes(v.estado)).length, color: "#f59e0b", sub: "ahora mismo" },
         ].map(s => (
           <div key={s.label} style={{ background: "#080808", border: `1px solid ${s.color}20`, borderRadius: 12, padding: "20px 24px" }}>
@@ -169,6 +171,8 @@ function PipelineSection({ canales, videos, loading }) {
                   <span style={{ fontSize: 11, color: "#f97316" }}>♪ TikTok</span>
                 ) : v.facebook_video_id ? (
                   <a href={`https://www.facebook.com/reel/${v.facebook_video_id}`} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#eab308", textDecoration: "none" }}>f {v.facebook_video_id.slice(0,8)}…</a>
+                ) : v.instagram_media_id ? (
+                  <a href={`https://www.instagram.com/reel/`} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#ec4899", textDecoration: "none" }}>◉ IG Reel</a>
                 ) : "—"}
               </span>
               <span style={{ fontSize: 11, color: "#4b5563", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v.titulo_tema || v.tema || "—"}</span>
@@ -698,7 +702,7 @@ function EvolucionSection({ canales, videos }) {
     });
   }, [videos, canales]);
 
-  const coloresCanal = { crimen: "#e53e3e", finanzas: "#38d9a9", curiosidades: "#a78bfa", guerras: "#f97316", historia_peru: "#eab308" };
+  const coloresCanal = { crimen: "#e53e3e", finanzas: "#38d9a9", curiosidades: "#a78bfa", guerras: "#f97316", historia_peru: "#eab308", biografias: "#ec4899" };
   const canalesUnicos = [...new Set(videosConDatos.map(v => v.canal))];
   const ytVideos = videosConDatos.filter(v => v.plataforma === "youtube" || (!v.plataforma && v.plataforma !== "tiktok" && v.plataforma !== "facebook"));
   const videosFiltrados = canalFiltro === "todos" ? ytVideos : ytVideos.filter(v => v.canal === canalFiltro);
@@ -797,7 +801,34 @@ function EvolucionSection({ canales, videos }) {
           })()}
         </>
       )}
-      {fuente !== "youtube" && fuente !== "tiktok" && fuente !== "facebook" && (
+      {fuente === "instagram" && (
+        <>
+          {(() => {
+            const igVids = videosConDatos.filter(v => v.plataforma === "instagram");
+            const igFiltrados = canalFiltro === "todos" ? igVids : igVids.filter(v => v.canal === canalFiltro);
+            return (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
+                  {[
+                    { label: "Videos publicados", value: igVids.length, color: "#6b7280" },
+                    { label: "Vistas totales", value: igVids.reduce((s, v) => s + (v.vistas || 0), 0).toLocaleString("es-PE"), color: "#38d9a9" },
+                    { label: "Likes totales", value: igVids.reduce((s, v) => s + (v.likes || 0), 0).toLocaleString("es-PE"), color: "#f59e0b" },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: "#0f0f0f", border: `1px solid ${s.color}25`, borderRadius: 10, padding: "14px 18px" }}>
+                      <div style={{ fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>{s.label}</div>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: s.color, fontFamily: "'Space Mono', monospace" }}>{s.value}</div>
+                    </div>
+                  ))}
+                </div>
+                {igFiltrados.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "40px 0", color: "#374151", fontSize: 13 }}>Sin publicaciones Instagram aún</div>
+                ) : igFiltrados.map(video => <VideoRow key={video.id} video={video} expanded={expandedId === video.id} onToggle={() => setExpandedId(expandedId === video.id ? null : video.id)} />)}
+              </>
+            );
+          })()}
+        </>
+      )}
+      {fuente !== "youtube" && fuente !== "tiktok" && fuente !== "facebook" && fuente !== "instagram" && (
         <div style={{ textAlign: "center", padding: "60px 20px", background: "#080808", borderRadius: 14, border: "1px solid #111" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>{FUENTES.find(f => f.id === fuente)?.icon}</div>
           <div style={{ fontSize: 15, color: "#4b5563", marginBottom: 8 }}>{FUENTES.find(f => f.id === fuente)?.label} — Próximamente</div>
@@ -813,7 +844,7 @@ function EvolucionSection({ canales, videos }) {
 const PLATAFORMAS_CRECIMIENTO = [
   { id: "youtube",   label: "YouTube",   activo: true,  color: "#e53e3e", icon: "▶" },
   { id: "tiktok",    label: "TikTok",    activo: true,  color: "#a78bfa", icon: "♪" },
-  { id: "instagram", label: "Instagram", activo: false, color: "#f59e0b", icon: "◉" },
+  { id: "instagram", label: "Instagram", activo: true,  color: "#ec4899", icon: "◉" },
   { id: "facebook",  label: "Facebook",  activo: true,  color: "#eab308", icon: "f" },
 ];
 
@@ -898,7 +929,7 @@ function CrecimientoSection({ canales }) {
         ))}
       </div>
 
-      {(plataforma === "youtube" || plataforma === "tiktok" || plataforma === "facebook") && (
+      {(plataforma === "youtube" || plataforma === "tiktok" || plataforma === "facebook" || plataforma === "instagram") && (
         <>
           {/* Controles */}
           <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap", alignItems: "center" }}>
@@ -1024,7 +1055,7 @@ function CrecimientoSection({ canales }) {
         </>
       )}
 
-      {plataforma !== "youtube" && plataforma !== "tiktok" && plataforma !== "facebook" && (
+      {plataforma !== "youtube" && plataforma !== "tiktok" && plataforma !== "facebook" && plataforma !== "instagram" && (
         <div style={{ textAlign: "center", padding: "80px 20px", background: "#080808", borderRadius: 14, border: "1px solid #111" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>{PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.icon}</div>
           <div style={{ fontSize: 16, color: "#4b5563", marginBottom: 8, fontWeight: 600 }}>
@@ -1154,9 +1185,9 @@ export default function Dashboard() {
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px #22c55e", animation: "ping 2.5s ease-in-out infinite" }} />
-              <span style={{ fontSize: 12, color: "#6b7280" }}>5 canales</span>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>6 canales</span>
             </div>
-            <span style={{ fontSize: 12, color: "#4b5563" }}>5 videos/día</span>
+            <span style={{ fontSize: 12, color: "#4b5563" }}>6 videos/día</span>
             {lastUpdate && <span style={{ fontSize: 11, color: "#374151", fontFamily: "'Space Mono', monospace" }}>{lastUpdate.toLocaleTimeString("es-PE")}</span>}
             <button onClick={syncYoutube} disabled={syncing} style={{ background: syncing ? "#1f2937" : "transparent", border: "1px solid #1f2937", borderRadius: 8, padding: "6px 14px", color: syncing ? "#38d9a9" : "#6b7280", cursor: syncing ? "default" : "pointer", fontSize: 12, fontFamily: "'DM Sans', sans-serif", transition: "all 0.2s" }}>{syncing ? "⟳ Sincronizando..." : "↻ Actualizar"}</button>
           </div>
@@ -1178,7 +1209,7 @@ export default function Dashboard() {
             <span style={{ fontSize: 12, color: "#374151" }}>Powered by</span>
             <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, background: "linear-gradient(90deg, #38d9a9, #a78bfa, #38d9a9)", backgroundSize: "200% auto", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", animation: "shimmer 3s linear infinite" }}>NEXOVA</span>
           </div>
-          <span style={{ fontSize: 11, color: "#1f2937", fontFamily: "'Space Mono', monospace" }}>autopublish · YouTube · TikTok · Facebook · Lima, Perú</span>
+          <span style={{ fontSize: 11, color: "#1f2937", fontFamily: "'Space Mono', monospace" }}>autopublish · YouTube · TikTok · Facebook · Instagram · Lima, Perú</span>
         </div>
       </div>
     </>
