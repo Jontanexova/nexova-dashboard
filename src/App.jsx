@@ -170,7 +170,7 @@ function PipelineSection({ canales, videos, loading }) {
                 ) : v.tiktok_publish_id ? (
                   <span style={{ fontSize: 11, color: "#f97316" }}>♪ TikTok</span>
                 ) : v.facebook_video_id ? (
-                  <a href={`https://www.facebook.com/reel/${v.facebook_video_id}`} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#eab308", textDecoration: "none" }}>f {v.facebook_video_id.slice(0,8)}…</a>
+                  <a href={v.facebook_permalink || `https://www.facebook.com/reel/${v.facebook_video_id}`} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#eab308", textDecoration: "none" }}>f {v.facebook_video_id.slice(0,8)}…</a>
                 ) : v.instagram_media_id ? (
                   <a href={v.instagram_permalink || `https://www.instagram.com/oraculo.virtual1/`} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#ec4899", textDecoration: "none" }}>◉ IG Reel</a>
                 ) : "—"}
@@ -902,7 +902,7 @@ function CrecimientoSection({ canales }) {
   const canalesPorPlataforma = canales.filter(c => c.plataforma === plataforma || (!c.plataforma && plataforma === "youtube"));
   const canalesFiltrados = canalFiltro === "todos" ? canalesPorPlataforma : canalesPorPlataforma.filter(c => c.id === canalFiltro);
 
-  // Construir datos del gráfico — 1 punto por día usando el registro más reciente de cada día
+  // Construir datos del gráfico — 1 punto por día, sumando todos los videos del día
   const buildChartData = (canal) => {
     const cm = metricas.filter(m => m.canal_id === canal.id)
       .sort((a, b) => new Date(a.fecha_consulta).getTime() - new Date(b.fecha_consulta).getTime());
@@ -913,39 +913,68 @@ function CrecimientoSection({ canales }) {
         return { fecha: d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" }), valor: 0 };
       });
     }
-    // Agrupar por día y tomar el último valor del día
+    // Para FB/IG: agrupar por día y sumar métricas de todos los videos de ese día
+    // Para YT: tomar el último valor del día (comportamiento original)
     const porDia = {};
     cm.forEach(m => {
       const fecha = new Date(m.fecha_consulta).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
-      porDia[fecha] = Number(m[metrica]) || 0;
+      const val = Number(m[metrica]) || 0;
+      if (plataforma === "facebook" || plataforma === "instagram") {
+        // Sumar por video_id para no duplicar, pero sumar entre videos distintos
+        if (!porDia[fecha]) porDia[fecha] = {};
+        const vid = m.video_id || '_page_';
+        porDia[fecha][vid] = val; // último valor por video por día
+      } else {
+        porDia[fecha] = val;
+      }
     });
+    if (plataforma === "facebook" || plataforma === "instagram") {
+      return Object.entries(porDia).map(([fecha, vids]) => ({
+        fecha, valor: Object.values(vids).reduce((s, v) => s + v, 0)
+      }));
+    }
     return Object.entries(porDia).map(([fecha, valor]) => ({ fecha, valor }));
   };
 
-  // Totales — usar SOLO el último registro por canal (el más reciente)
+  // Totales — sumar métricas del último sync de TODOS los videos del canal
   const getTotales = (canal) => {
-    const cm = metricas.filter(m => m.canal_id === canal.id)
-      .sort((a, b) => new Date(b.fecha_consulta).getTime() - new Date(a.fecha_consulta).getTime());
-    const ultimo = cm[0]; // Solo el más reciente
-    if (!ultimo) return { likes: 0, seguidores: 0, vistas: 0, comentarios: 0, ultFecha: "—" };
+    const cm = metricas.filter(m => m.canal_id === canal.id);
+    if (cm.length === 0) return { likes: 0, seguidores: 0, vistas: 0, comentarios: 0, compartidos: 0, guardados: 0, alcance: 0, seguidores_pagina: 0, seguidores_cuenta: 0, suscriptores_ganados: 0, suscriptores: 0, likes_pagina: 0, ultFecha: "—" };
 
-    // Mapear nombre de columna de seguidores según plataforma
+    // Obtener el último registro por cada video_id (para no sumar duplicados)
+    const porVideo = {};
+    cm.sort((a, b) => new Date(b.fecha_consulta).getTime() - new Date(a.fecha_consulta).getTime())
+      .forEach(m => {
+        const key = m.video_id || '_page_';
+        if (!porVideo[key]) porVideo[key] = m;
+      });
+
+    const registros = Object.values(porVideo);
+    const totalVistas = registros.reduce((s, m) => s + (Number(m.vistas) || 0), 0);
+    const totalLikes = registros.reduce((s, m) => s + (Number(m.likes) || 0), 0);
+    const totalComentarios = registros.reduce((s, m) => s + (Number(m.comentarios) || 0), 0);
+    const totalCompartidos = registros.reduce((s, m) => s + (Number(m.compartidos) || 0), 0);
+    const totalGuardados = registros.reduce((s, m) => s + (Number(m.guardados) || 0), 0);
+    const totalAlcance = registros.reduce((s, m) => s + (Number(m.alcance) || 0), 0);
+
+    // Seguidores: tomar del registro más reciente (es dato de página/cuenta, no por video)
+    const ultimo = cm[0];
     const seguidores = plataforma === "facebook" ? (ultimo.seguidores_pagina || 0) :
                        plataforma === "instagram" ? (ultimo.seguidores_cuenta || 0) :
                        (ultimo.suscriptores_ganados || 0);
 
     return {
-      likes: ultimo.likes || 0,
+      likes: totalLikes,
       seguidores,
       seguidores_pagina: ultimo.seguidores_pagina || 0,
       seguidores_cuenta: ultimo.seguidores_cuenta || 0,
       suscriptores_ganados: ultimo.suscriptores_ganados || 0,
       suscriptores: seguidores,
-      vistas: ultimo.vistas || 0,
-      comentarios: ultimo.comentarios || 0,
-      compartidos: ultimo.compartidos || 0,
-      guardados: ultimo.guardados || 0,
-      alcance: ultimo.alcance || 0,
+      vistas: totalVistas,
+      comentarios: totalComentarios,
+      compartidos: totalCompartidos,
+      guardados: totalGuardados,
+      alcance: totalAlcance,
       likes_pagina: ultimo.likes_pagina || 0,
       ultFecha: new Date(ultimo.fecha_consulta).toLocaleDateString("es-PE"),
     };
@@ -1285,4 +1314,4 @@ export default function Dashboard() {
 
 
 
-// build: 1776237000 — v8 con métricas Facebook + Instagram en Crecimiento
+// build: 1776259000 — v8.1 fix FB+IG permalinks en Pipeline
