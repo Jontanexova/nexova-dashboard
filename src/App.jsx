@@ -9,6 +9,7 @@ const CANAL_COLORS = {
   finanzas:     { accent: "#38d9a9", glow: "#38d9a940" },
   curiosidades: { accent: "#a78bfa", glow: "#a78bfa40" },
   guerras:      { accent: "#f97316", glow: "#f9731640" },
+  historia_peru:{ accent: "#eab308", glow: "#eab30840" },
 };
 
 const CANAL_CHART_COLORS = {
@@ -16,6 +17,7 @@ const CANAL_CHART_COLORS = {
   "Dinero Consciente": "#38d9a9",
   "Mente Inquieta":    "#a78bfa",
   "Historias Gráficas": "#f97316",
+  "Oráculo Virtual":   "#eab308",
 };
 
 const ESTADO_CONFIG = {
@@ -43,7 +45,7 @@ const METRICAS_CONFIG = [
 const FUENTES = [
   { id: "youtube",   label: "YouTube",   activo: true,  icon: "▶" },
   { id: "tiktok",    label: "TikTok",    activo: true,  icon: "♪" },
-  { id: "facebook",  label: "Facebook",  activo: false, icon: "f" },
+  { id: "facebook",  label: "Facebook",  activo: true,  icon: "f" },
   { id: "instagram", label: "Instagram", activo: false, icon: "◉" },
 ];
 
@@ -694,9 +696,9 @@ function EvolucionSection({ canales, videos }) {
     });
   }, [videos, canales]);
 
-  const coloresCanal = { crimen: "#e53e3e", finanzas: "#38d9a9", curiosidades: "#a78bfa", guerras: "#f97316" };
+  const coloresCanal = { crimen: "#e53e3e", finanzas: "#38d9a9", curiosidades: "#a78bfa", guerras: "#f97316", historia_peru: "#eab308" };
   const canalesUnicos = [...new Set(videosConDatos.map(v => v.canal))];
-  const ytVideos = videosConDatos.filter(v => v.plataforma !== "tiktok");
+  const ytVideos = videosConDatos.filter(v => v.plataforma === "youtube" || (!v.plataforma && v.plataforma !== "tiktok" && v.plataforma !== "facebook"));
   const videosFiltrados = canalFiltro === "todos" ? ytVideos : ytVideos.filter(v => v.canal === canalFiltro);
 
   return (
@@ -766,7 +768,34 @@ function EvolucionSection({ canales, videos }) {
           })()}
         </>
       )}
-      {fuente !== "youtube" && fuente !== "tiktok" && (
+      {fuente === "facebook" && (
+        <>
+          {(() => {
+            const fbVids = videosConDatos.filter(v => v.plataforma === "facebook");
+            const fbFiltrados = canalFiltro === "todos" ? fbVids : fbVids.filter(v => v.canal === canalFiltro);
+            return (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
+                  {[
+                    { label: "Videos publicados", value: fbVids.length, color: "#6b7280" },
+                    { label: "Vistas totales", value: fbVids.reduce((s, v) => s + (v.vistas || 0), 0).toLocaleString("es-PE"), color: "#38d9a9" },
+                    { label: "Likes totales", value: fbVids.reduce((s, v) => s + (v.likes || 0), 0).toLocaleString("es-PE"), color: "#f59e0b" },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: "#0f0f0f", border: `1px solid ${s.color}25`, borderRadius: 10, padding: "14px 18px" }}>
+                      <div style={{ fontSize: 10, color: "#4b5563", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>{s.label}</div>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: s.color, fontFamily: "'Space Mono', monospace" }}>{s.value}</div>
+                    </div>
+                  ))}
+                </div>
+                {fbFiltrados.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "40px 0", color: "#374151", fontSize: 13 }}>Sin publicaciones Facebook aún</div>
+                ) : fbFiltrados.map(video => <VideoRow key={video.id} video={video} expanded={expandedId === video.id} onToggle={() => setExpandedId(expandedId === video.id ? null : video.id)} />)}
+              </>
+            );
+          })()}
+        </>
+      )}
+      {fuente !== "youtube" && fuente !== "tiktok" && fuente !== "facebook" && (
         <div style={{ textAlign: "center", padding: "60px 20px", background: "#080808", borderRadius: 14, border: "1px solid #111" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>{FUENTES.find(f => f.id === fuente)?.icon}</div>
           <div style={{ fontSize: 15, color: "#4b5563", marginBottom: 8 }}>{FUENTES.find(f => f.id === fuente)?.label} — Próximamente</div>
@@ -783,7 +812,7 @@ const PLATAFORMAS_CRECIMIENTO = [
   { id: "youtube",   label: "YouTube",   activo: true,  color: "#e53e3e", icon: "▶" },
   { id: "tiktok",    label: "TikTok",    activo: true,  color: "#a78bfa", icon: "♪" },
   { id: "instagram", label: "Instagram", activo: false, color: "#f59e0b", icon: "◉" },
-  { id: "facebook",  label: "Facebook",  activo: false, color: "#38d9a9", icon: "f" },
+  { id: "facebook",  label: "Facebook",  activo: true,  color: "#eab308", icon: "f" },
 ];
 
 function CrecimientoSection({ canales }) {
@@ -867,7 +896,7 @@ function CrecimientoSection({ canales }) {
         ))}
       </div>
 
-      {(plataforma === "youtube" || plataforma === "tiktok") && (
+      {(plataforma === "youtube" || plataforma === "tiktok" || plataforma === "facebook") && (
         <>
           {/* Controles */}
           <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap", alignItems: "center" }}>
@@ -993,7 +1022,7 @@ function CrecimientoSection({ canales }) {
         </>
       )}
 
-      {plataforma !== "youtube" && plataforma !== "tiktok" && (
+      {plataforma !== "youtube" && plataforma !== "tiktok" && plataforma !== "facebook" && (
         <div style={{ textAlign: "center", padding: "80px 20px", background: "#080808", borderRadius: 14, border: "1px solid #111" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>{PLATAFORMAS_CRECIMIENTO.find(p => p.id === plataforma)?.icon}</div>
           <div style={{ fontSize: 16, color: "#4b5563", marginBottom: 8, fontWeight: 600 }}>
@@ -1123,9 +1152,9 @@ export default function Dashboard() {
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px #22c55e", animation: "ping 2.5s ease-in-out infinite" }} />
-              <span style={{ fontSize: 12, color: "#6b7280" }}>4 canales</span>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>5 canales</span>
             </div>
-            <span style={{ fontSize: 12, color: "#4b5563" }}>4 videos/día</span>
+            <span style={{ fontSize: 12, color: "#4b5563" }}>5 videos/día</span>
             {lastUpdate && <span style={{ fontSize: 11, color: "#374151", fontFamily: "'Space Mono', monospace" }}>{lastUpdate.toLocaleTimeString("es-PE")}</span>}
             <button onClick={syncYoutube} disabled={syncing} style={{ background: syncing ? "#1f2937" : "transparent", border: "1px solid #1f2937", borderRadius: 8, padding: "6px 14px", color: syncing ? "#38d9a9" : "#6b7280", cursor: syncing ? "default" : "pointer", fontSize: 12, fontFamily: "'DM Sans', sans-serif", transition: "all 0.2s" }}>{syncing ? "⟳ Sincronizando..." : "↻ Actualizar"}</button>
           </div>
@@ -1147,7 +1176,7 @@ export default function Dashboard() {
             <span style={{ fontSize: 12, color: "#374151" }}>Powered by</span>
             <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, background: "linear-gradient(90deg, #38d9a9, #a78bfa, #38d9a9)", backgroundSize: "200% auto", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", animation: "shimmer 3s linear infinite" }}>NEXOVA</span>
           </div>
-          <span style={{ fontSize: 11, color: "#1f2937", fontFamily: "'Space Mono', monospace" }}>autopublish · YouTube · TikTok · Lima, Perú</span>
+          <span style={{ fontSize: 11, color: "#1f2937", fontFamily: "'Space Mono', monospace" }}>autopublish · YouTube · TikTok · Facebook · Lima, Perú</span>
         </div>
       </div>
     </>
