@@ -172,7 +172,7 @@ function PipelineSection({ canales, videos, loading }) {
                 ) : v.facebook_video_id ? (
                   <a href={`https://www.facebook.com/reel/${v.facebook_video_id}`} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#eab308", textDecoration: "none" }}>f {v.facebook_video_id.slice(0,8)}…</a>
                 ) : v.instagram_media_id ? (
-                  <a href={`https://www.instagram.com/reel/`} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#ec4899", textDecoration: "none" }}>◉ IG Reel</a>
+                  <a href={v.instagram_permalink || `https://www.instagram.com/oraculo.virtual1/`} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#ec4899", textDecoration: "none" }}>◉ IG Reel</a>
                 ) : "—"}
               </span>
               <span style={{ fontSize: 11, color: "#4b5563", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v.titulo_tema || v.tema || "—"}</span>
