@@ -119,7 +119,7 @@ function PipelineSection({ canales, videos, loading }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
         {[
           { label: "TOTAL VIDEOS", value: videos.length, color: "#6b7280", sub: "generados" },
-          { label: "PUBLICADOS", value: videos.filter(v => v.estado === "publicado").length, color: "#22c55e", sub: `${videos.filter(v => v.estado === "publicado" && v.plataforma !== "tiktok").length} YouTube · ${videos.filter(v => v.estado === "publicado" && v.plataforma === "tiktok").length} TikTok` },
+          { label: "PUBLICADOS", value: videos.filter(v => v.estado === "publicado").length, color: "#22c55e", sub: `${videos.filter(v => v.estado === "publicado" && v.plataforma !== "tiktok" && v.plataforma !== "facebook").length} YouTube · ${videos.filter(v => v.estado === "publicado" && v.plataforma === "tiktok").length} TikTok · ${videos.filter(v => v.estado === "publicado" && v.plataforma === "facebook").length} Facebook` },
           { label: "EN PROCESO", value: videos.filter(v => !["publicado","error","pendiente"].includes(v.estado)).length, color: "#f59e0b", sub: "ahora mismo" },
         ].map(s => (
           <div key={s.label} style={{ background: "#080808", border: `1px solid ${s.color}20`, borderRadius: 12, padding: "20px 24px" }}>
@@ -167,6 +167,8 @@ function PipelineSection({ canales, videos, loading }) {
                   <a href={v.youtube_url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#e53e3e", textDecoration: "none" }}>▶ {v.youtube_video_id.slice(0,8)}…</a>
                 ) : v.tiktok_publish_id ? (
                   <span style={{ fontSize: 11, color: "#f97316" }}>♪ TikTok</span>
+                ) : v.facebook_video_id ? (
+                  <a href={`https://www.facebook.com/reel/${v.facebook_video_id}`} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#eab308", textDecoration: "none" }}>f {v.facebook_video_id.slice(0,8)}…</a>
                 ) : "—"}
               </span>
               <span style={{ fontSize: 11, color: "#4b5563", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v.titulo_tema || v.tema || "—"}</span>
