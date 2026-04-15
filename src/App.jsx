@@ -855,17 +855,49 @@ function CrecimientoSection({ canales }) {
   const [metricas, setMetricas] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    supabaseQuery("metricas_youtube", "?order=fecha_consulta.asc&limit=500")
-      .then(d => { setMetricas(Array.isArray(d) ? d : []); setLoading(false); });
-  }, []);
+  const TABLA_POR_PLATAFORMA = { youtube: "metricas_youtube", facebook: "metricas_facebook", instagram: "metricas_instagram", tiktok: "metricas_youtube" };
 
-  const METRICAS_OPCIONES = [
-    { key: "likes",               label: "Likes",        color: "#f59e0b" },
-    { key: "suscriptores_ganados", label: "Suscriptores", color: "#38d9a9" },
-    { key: "vistas",              label: "Vistas",       color: "#a78bfa" },
-    { key: "comentarios",         label: "Comentarios",  color: "#e53e3e" },
-  ];
+  useEffect(() => {
+    setLoading(true);
+    const tabla = TABLA_POR_PLATAFORMA[plataforma] || "metricas_youtube";
+    supabaseQuery(tabla, "?order=fecha_consulta.asc&limit=500")
+      .then(d => { setMetricas(Array.isArray(d) ? d : []); setLoading(false); })
+      .catch(() => { setMetricas([]); setLoading(false); });
+  }, [plataforma]);
+
+  const METRICAS_POR_PLATAFORMA = {
+    youtube: [
+      { key: "likes",               label: "Likes",        color: "#f59e0b" },
+      { key: "suscriptores_ganados", label: "Suscriptores", color: "#38d9a9" },
+      { key: "vistas",              label: "Vistas",       color: "#a78bfa" },
+      { key: "comentarios",         label: "Comentarios",  color: "#e53e3e" },
+    ],
+    facebook: [
+      { key: "likes",               label: "Likes",        color: "#f59e0b" },
+      { key: "seguidores_pagina",   label: "Seguidores",   color: "#38d9a9" },
+      { key: "vistas",              label: "Vistas",       color: "#a78bfa" },
+      { key: "comentarios",         label: "Comentarios",  color: "#e53e3e" },
+    ],
+    instagram: [
+      { key: "likes",               label: "Likes",        color: "#f59e0b" },
+      { key: "seguidores_cuenta",   label: "Seguidores",   color: "#38d9a9" },
+      { key: "vistas",              label: "Vistas",       color: "#a78bfa" },
+      { key: "comentarios",         label: "Comentarios",  color: "#e53e3e" },
+    ],
+    tiktok: [
+      { key: "likes",               label: "Likes",        color: "#f59e0b" },
+      { key: "suscriptores_ganados", label: "Seguidores",  color: "#38d9a9" },
+      { key: "vistas",              label: "Vistas",       color: "#a78bfa" },
+      { key: "comentarios",         label: "Comentarios",  color: "#e53e3e" },
+    ],
+  };
+  const METRICAS_OPCIONES = METRICAS_POR_PLATAFORMA[plataforma] || METRICAS_POR_PLATAFORMA.youtube;
+
+  // Reset metrica if current one doesn't exist for new platform
+  useEffect(() => {
+    const keys = (METRICAS_POR_PLATAFORMA[plataforma] || []).map(m => m.key);
+    if (!keys.includes(metrica)) setMetrica(keys[0] || "likes");
+  }, [plataforma]);
 
   const canalesPorPlataforma = canales.filter(c => c.plataforma === plataforma || (!c.plataforma && plataforma === "youtube"));
   const canalesFiltrados = canalFiltro === "todos" ? canalesPorPlataforma : canalesPorPlataforma.filter(c => c.id === canalFiltro);
@@ -895,12 +927,26 @@ function CrecimientoSection({ canales }) {
     const cm = metricas.filter(m => m.canal_id === canal.id)
       .sort((a, b) => new Date(b.fecha_consulta).getTime() - new Date(a.fecha_consulta).getTime());
     const ultimo = cm[0]; // Solo el más reciente
-    if (!ultimo) return { likes: 0, suscriptores: 0, vistas: 0, comentarios: 0, ultFecha: "—" };
+    if (!ultimo) return { likes: 0, seguidores: 0, vistas: 0, comentarios: 0, ultFecha: "—" };
+
+    // Mapear nombre de columna de seguidores según plataforma
+    const seguidores = plataforma === "facebook" ? (ultimo.seguidores_pagina || 0) :
+                       plataforma === "instagram" ? (ultimo.seguidores_cuenta || 0) :
+                       (ultimo.suscriptores_ganados || 0);
+
     return {
       likes: ultimo.likes || 0,
-      suscriptores: ultimo.suscriptores_ganados || 0,
+      seguidores,
+      seguidores_pagina: ultimo.seguidores_pagina || 0,
+      seguidores_cuenta: ultimo.seguidores_cuenta || 0,
+      suscriptores_ganados: ultimo.suscriptores_ganados || 0,
+      suscriptores: seguidores,
       vistas: ultimo.vistas || 0,
       comentarios: ultimo.comentarios || 0,
+      compartidos: ultimo.compartidos || 0,
+      guardados: ultimo.guardados || 0,
+      alcance: ultimo.alcance || 0,
+      likes_pagina: ultimo.likes_pagina || 0,
       ultFecha: new Date(ultimo.fecha_consulta).toLocaleDateString("es-PE"),
     };
   };
@@ -977,7 +1023,7 @@ function CrecimientoSection({ canales }) {
                 const col = CANAL_COLORS[canal.nicho]?.accent || "#6b7280";
                 const chartData = buildChartData(canal);
                 const totales = getTotales(canal);
-                const valorActual = totales[metrica === "suscriptores_ganados" ? "suscriptores" : metrica] || 0;
+                const valorActual = totales[metrica] || 0;
 
                 return (
                   <div key={canal.id} style={{ background: "#080808", border: `1px solid ${col}25`, borderRadius: 16, padding: 20 }}>
@@ -1025,14 +1071,24 @@ function CrecimientoSection({ canales }) {
                       </LineChart>
                     </ResponsiveContainer>
 
-                    {/* Mini stats del canal */}
+                    {/* Mini stats del canal — plataforma-específico */}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginTop: 16 }}>
-                      {[
+                      {(plataforma === "facebook" ? [
+                        { label: "Likes", value: totales.likes, color: "#f59e0b" },
+                        { label: "Seguidores", value: totales.seguidores_pagina, color: "#38d9a9" },
+                        { label: "Vistas", value: totales.vistas, color: "#a78bfa" },
+                        { label: "Compartidos", value: totales.compartidos, color: "#e53e3e" },
+                      ] : plataforma === "instagram" ? [
+                        { label: "Likes", value: totales.likes, color: "#f59e0b" },
+                        { label: "Seguidores", value: totales.seguidores_cuenta, color: "#38d9a9" },
+                        { label: "Vistas", value: totales.vistas, color: "#a78bfa" },
+                        { label: "Guardados", value: totales.guardados, color: "#ec4899" },
+                      ] : [
                         { label: "Likes", value: totales.likes, color: "#f59e0b" },
                         { label: "Suscript.", value: totales.suscriptores, color: "#38d9a9" },
                         { label: "Vistas", value: totales.vistas, color: "#a78bfa" },
                         { label: "Coment.", value: totales.comentarios, color: "#e53e3e" },
-                      ].map(s => (
+                      ]).map(s => (
                         <div key={s.label} style={{ background: "#0f0f0f", borderRadius: 8, padding: "8px 10px", textAlign: "center", border: `1px solid ${s.color}15` }}>
                           <div style={{ fontSize: 14, fontWeight: 700, color: s.color, fontFamily: "'Space Mono', monospace" }}>
                             {s.value >= 1000 ? (s.value/1000).toFixed(1)+"K" : s.value}
@@ -1103,10 +1159,20 @@ export default function Dashboard() {
   const syncYoutube = useCallback(async () => {
     setSyncing(true);
     try {
-      await fetch(`${SUPABASE_URL}/functions/v1/sync-youtube-metrics`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      await Promise.all([
+        fetch(`${SUPABASE_URL}/functions/v1/sync-youtube-metrics`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        fetch(`${SUPABASE_URL}/functions/v1/sync-facebook-metrics`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        fetch(`${SUPABASE_URL}/functions/v1/sync-instagram-metrics`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }),
+      ]);
       await fetchData();
     } catch (e) { console.error(e); }
     finally { setSyncing(false); }
@@ -1219,4 +1285,4 @@ export default function Dashboard() {
 
 
 
-// build: 1776146000 — v2 con TikTok, guerras, saldos Supabase
+// build: 1776237000 — v8 con métricas Facebook + Instagram en Crecimiento
