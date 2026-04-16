@@ -902,38 +902,44 @@ function CrecimientoSection({ canales }) {
   const canalesPorPlataforma = canales.filter(c => c.plataforma === plataforma || (!c.plataforma && plataforma === "youtube"));
   const canalesFiltrados = canalFiltro === "todos" ? canalesPorPlataforma : canalesPorPlataforma.filter(c => c.id === canalFiltro);
 
-  // Construir datos del gráfico — 1 punto por día, sumando todos los videos del día
+  // Construir datos del gráfico — SIEMPRE 7 días, rellenando 0 donde no hay datos
   const buildChartData = (canal) => {
     const cm = metricas.filter(m => m.canal_id === canal.id)
       .sort((a, b) => new Date(a.fecha_consulta).getTime() - new Date(b.fecha_consulta).getTime());
-    if (cm.length === 0) {
-      const hoy = new Date();
-      return Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(hoy); d.setDate(d.getDate() - (6 - i));
-        return { fecha: d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" }), valor: 0 };
-      });
-    }
-    // Para FB/IG: agrupar por día y sumar métricas de todos los videos de ese día
-    // Para YT: tomar el último valor del día (comportamiento original)
+
+    // Generar los últimos 7 días como base
+    const hoy = new Date();
+    const dias7 = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(hoy); d.setDate(d.getDate() - (6 - i));
+      return d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+    });
+
+    // Agrupar datos existentes por día
     const porDia = {};
     cm.forEach(m => {
       const fecha = new Date(m.fecha_consulta).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
       const val = Number(m[metrica]) || 0;
       if (plataforma === "facebook" || plataforma === "instagram") {
-        // Sumar por video_id para no duplicar, pero sumar entre videos distintos
         if (!porDia[fecha]) porDia[fecha] = {};
         const vid = m.video_id || '_page_';
-        porDia[fecha][vid] = val; // último valor por video por día
+        porDia[fecha][vid] = val;
       } else {
         porDia[fecha] = val;
       }
     });
-    if (plataforma === "facebook" || plataforma === "instagram") {
-      return Object.entries(porDia).map(([fecha, vids]) => ({
-        fecha, valor: Object.values(vids).reduce((s, v) => s + v, 0)
-      }));
-    }
-    return Object.entries(porDia).map(([fecha, valor]) => ({ fecha, valor }));
+
+    // Mapear los 7 días, rellenando con 0 donde no hay datos
+    return dias7.map(fecha => {
+      let valor = 0;
+      if (plataforma === "facebook" || plataforma === "instagram") {
+        if (porDia[fecha]) {
+          valor = Object.values(porDia[fecha]).reduce((s, v) => s + v, 0);
+        }
+      } else {
+        valor = porDia[fecha] || 0;
+      }
+      return { fecha, valor };
+    });
   };
 
   // Totales — sumar métricas del último sync de TODOS los videos del canal
