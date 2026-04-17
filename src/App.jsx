@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const SUPABASE_URL = "https://xkdtpzxgtjujcopbcrwy.supabase.co";
@@ -848,19 +848,27 @@ const PLATAFORMAS_CRECIMIENTO = [
   { id: "facebook",  label: "Facebook",  activo: true,  color: "#eab308", icon: "f" },
 ];
 
-function CrecimientoSection({ canales }) {
+function CrecimientoSection({ canales, videos }) {
   const [plataforma, setPlataforma] = useState("youtube");
   const [metrica, setMetrica] = useState("likes");
   const [canalFiltro, setCanalFiltro] = useState("todos");
+  const [tipoFiltro, setTipoFiltro] = useState("todos");
   const [metricas, setMetricas] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Lookup rápido video_id -> tipo ('largo' | 'short')
+  const videosTipo = useMemo(() => {
+    const map = {};
+    (videos || []).forEach(v => { map[v.id] = v.tipo || 'largo'; });
+    return map;
+  }, [videos]);
 
   const TABLA_POR_PLATAFORMA = { youtube: "metricas_youtube", facebook: "metricas_facebook", instagram: "metricas_instagram", tiktok: "metricas_youtube" };
 
   useEffect(() => {
     setLoading(true);
     const tabla = TABLA_POR_PLATAFORMA[plataforma] || "metricas_youtube";
-    supabaseQuery(tabla, "?order=fecha_consulta.asc&limit=500")
+    supabaseQuery(tabla, "?order=fecha_consulta.desc&limit=5000")
       .then(d => { setMetricas(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => { setMetricas([]); setLoading(false); });
   }, [plataforma]);
@@ -904,7 +912,15 @@ function CrecimientoSection({ canales }) {
 
   // Construir datos del gráfico — SIEMPRE 7 días, rellenando 0 donde no hay datos
   const buildChartData = (canal) => {
-    const cm = metricas.filter(m => m.canal_id === canal.id)
+    const cm = metricas.filter(m => {
+      if (m.canal_id !== canal.id) return false;
+      // Filtrar por tipo solo en YouTube (las demas plataformas no distinguen largo/short)
+      if (plataforma === "youtube" && tipoFiltro !== "todos") {
+        if (!m.video_id) return false;  // si no hay video_id, no podemos saber el tipo
+        return videosTipo[m.video_id] === tipoFiltro;
+      }
+      return true;
+    })
       .sort((a, b) => new Date(a.fecha_consulta).getTime() - new Date(b.fecha_consulta).getTime());
 
     // Generar los últimos 7 días como base
@@ -944,7 +960,14 @@ function CrecimientoSection({ canales }) {
 
   // Totales — sumar métricas del último sync de TODOS los videos del canal
   const getTotales = (canal) => {
-    const cm = metricas.filter(m => m.canal_id === canal.id);
+    const cm = metricas.filter(m => {
+      if (m.canal_id !== canal.id) return false;
+      if (plataforma === "youtube" && tipoFiltro !== "todos") {
+        if (!m.video_id) return false;
+        return videosTipo[m.video_id] === tipoFiltro;
+      }
+      return true;
+    });
     if (cm.length === 0) return { likes: 0, seguidores: 0, vistas: 0, comentarios: 0, compartidos: 0, guardados: 0, alcance: 0, seguidores_pagina: 0, seguidores_cuenta: 0, suscriptores_ganados: 0, suscriptores: 0, likes_pagina: 0, ultFecha: "—" };
 
     // Obtener el último registro por cada video_id (para no sumar duplicados)
@@ -1034,6 +1057,26 @@ function CrecimientoSection({ canales }) {
                 );
               })}
             </div>
+
+            {/* Toggle Largo/Short - solo para YouTube */}
+            {plataforma === "youtube" && (
+              <div style={{ display: "flex", gap: 6, alignItems: "center", paddingLeft: 12, borderLeft: "1px solid #1f2937" }}>
+                <span style={{ fontSize: 10, color: "#4b5563", fontFamily: "'Space Mono', monospace", letterSpacing: "0.05em", marginRight: 4 }}>TIPO</span>
+                {[
+                  { id: "todos", label: "Todos", color: "#6b7280" },
+                  { id: "largo", label: "Largos", color: "#38d9a9" },
+                  { id: "short", label: "Shorts", color: "#f59e0b" },
+                ].map(t => (
+                  <button key={t.id} onClick={() => setTipoFiltro(t.id)} style={{
+                    background: tipoFiltro === t.id ? `${t.color}20` : "transparent",
+                    border: `1px solid ${tipoFiltro === t.id ? t.color : "#1f2937"}`,
+                    borderRadius: 20, padding: "5px 12px", cursor: "pointer",
+                    color: tipoFiltro === t.id ? t.color : "#4b5563", fontSize: 11, fontFamily: "'DM Sans', sans-serif",
+                    transition: "all 0.2s",
+                  }}>{t.label}</button>
+                ))}
+              </div>
+            )}
 
             {/* Selector métrica */}
             <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
@@ -1302,7 +1345,7 @@ export default function Dashboard() {
           {activeTab === "canales"   && <CanalesSection canales={canales} videos={videos} temas={temas} temasStats={temasStats} />}
           {activeTab === "temas"     && <TemaSection canales={canales} temas={temas} temasStats={temasStats} loading={loading} />}
           {activeTab === "evolucion" && <EvolucionSection canales={canales} videos={videos} />}
-          {activeTab === "crecimiento" && <CrecimientoSection canales={canales} />}
+          {activeTab === "crecimiento" && <CrecimientoSection canales={canales} videos={videos} />}
         </div>
 
         <div style={{ borderTop: "1px solid #0f0f0f", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080808" }}>
