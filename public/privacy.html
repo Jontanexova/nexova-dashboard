@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Política de Privacidad · Nexova AutoPublish</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      line-height: 1.7;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+    h1 {
+      color: #2dd4bf;
+      margin-bottom: 0.5rem;
+      font-size: 2.25rem;
+    }
+    .last-updated {
+      color: #64748b;
+      font-size: 0.875rem;
+      margin-bottom: 2rem;
+    }
+    h2 {
+      color: #5eead4;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+    p, ul {
+      margin-bottom: 1rem;
+      color: #cbd5e1;
+    }
+    ul {
+      padding-left: 2rem;
+    }
+    li {
+      margin-bottom: 0.5rem;
+    }
+    a {
+      color: #2dd4bf;
+    }
+    strong {
+      color: #f1f5f9;
+    }
+    .back {
+      display: inline-block;
+      margin-bottom: 2rem;
+      color: #2dd4bf;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back">← Volver al inicio</a>
+    <h1>Política de Privacidad</h1>
+    <p class="last-updated">Última actualización: 19 de abril de 2026</p>
+
+    <h2>1. Introducción</h2>
+    <p>
+      Nexova AutoPublish ("la Aplicación", "nosotros") es una herramienta interna
+      desarrollada por JMV Distribución / Nexova para la gestión y publicación
+      automatizada de contenido multimedia en plataformas propias de redes sociales.
+      Esta política describe cómo la Aplicación maneja datos al integrarse con
+      servicios de terceros como Google (YouTube), Meta (Facebook, Instagram) y
+      TikTok.
+    </p>
+
+    <h2>2. Información que manejamos</h2>
+    <p>La Aplicación accede únicamente a:</p>
+    <ul>
+      <li><strong>Credenciales OAuth:</strong> tokens de acceso y actualización emitidos por las plataformas para autenticar la publicación.</li>
+      <li><strong>Metadatos de canales propios:</strong> identificadores, nombres y configuración de canales de YouTube y cuentas de redes sociales que son propiedad del operador de la Aplicación.</li>
+      <li><strong>Contenido generado internamente:</strong> videos, imágenes y textos producidos por el operador para ser publicados en dichos canales.</li>
+    </ul>
+    <p>
+      La Aplicación <strong>no recopila, almacena ni procesa datos personales de usuarios externos</strong>.
+      No hay pantallas de registro de usuarios ni formularios públicos.
+    </p>
+
+    <h2>3. Uso de los datos de Google</h2>
+    <p>
+      El uso de la información obtenida desde APIs de Google por parte de esta Aplicación
+      se adhiere a la
+      <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank">Política de Datos de Usuario de Servicios de API de Google</a>,
+      incluyendo los requisitos de Uso Limitado.
+    </p>
+    <p>Específicamente, los datos obtenidos mediante los scopes de YouTube se usan únicamente para:</p>
+    <ul>
+      <li>Subir videos a canales propiedad del operador de la Aplicación.</li>
+      <li>Actualizar metadatos (título, descripción, etiquetas) de esos videos.</li>
+      <li>Consultar estadísticas de visualizaciones para el propio dashboard interno.</li>
+    </ul>
+    <p>
+      <strong>No compartimos, vendemos, transferimos ni exponemos estos datos a terceros.</strong>
+      Los tokens OAuth se almacenan cifrados en nuestra base de datos privada y se utilizan
+      exclusivamente por los procesos automatizados del sistema.
+    </p>
+
+    <h2>4. Almacenamiento y seguridad</h2>
+    <p>
+      Los datos se almacenan en infraestructura cifrada (Supabase / PostgreSQL con cifrado
+      en reposo y en tránsito TLS 1.3). El acceso está restringido al operador
+      administrador mediante autenticación.
+    </p>
+
+    <h2>5. Retención</h2>
+    <p>
+      Los tokens OAuth se retienen mientras la Aplicación esté autorizada. El operador puede
+      revocar el acceso en cualquier momento desde
+      <a href="https://myaccount.google.com/permissions" target="_blank">https://myaccount.google.com/permissions</a>.
+    </p>
+
+    <h2>6. Cambios a esta política</h2>
+    <p>
+      Podemos actualizar esta política ocasionalmente. La fecha de "Última actualización"
+      indica la versión vigente.
+    </p>
+
+    <h2>7. Contacto</h2>
+    <p>
+      Para consultas sobre esta política:
+      <a href="mailto:nexova.autopublish@gmail.com">nexova.autopublish@gmail.com</a>
+    </p>
+  </div>
+</body>
+</html>
